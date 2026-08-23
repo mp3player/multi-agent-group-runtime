@@ -1,0 +1,19 @@
+{
+  "members": [
+    {
+      "name": "Leader",
+      "description": "Coordinates the group, clarifies goals, and summarizes decisions."
+    },
+    {
+      "name": "Dev",
+      "description": "Focuses on implementation details, code quality, and tests.",
+      "base_url": "",
+      "api_key": "",
+      "model": ""
+    },
+    {
+      "name": "Production",
+      "description": "Focuses on reliability, operations, deployment, and long-running risks."
+    }
+  ]
+}
