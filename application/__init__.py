@@ -1,53 +1,27 @@
-"""Application-layer composition and typed runtime configuration for MAS."""
+"""Public single-agent APIs, loaded on explicit access."""
 
-from application.config import (
-    AgentRuntimeConfig,
-    AppConfig,
-    GroupRuntimeConfig,
-    LLMProviderConfig,
-    LoggingConfig,
-    MemberRuntimeConfig,
-    PromptConfig,
-    SkillsConfig,
-    ToolConfig,
-    UsageConfig,
-)
-from application.builders import (
-    add_group_member,
-    build_agent,
-    build_group,
-)
-from application.agent_service import AgentAppService, HistoryEntry
-from application.group_service import GroupAppService
-from application.member_config_service import (
-    app_config_from_options,
-    load_group_member_configs,
-    member_config_from_command,
-    member_runtime_configs,
-)
-from application.options import AgentServiceOptions, GroupServiceOptions
+from importlib import import_module
 
-__all__ = [
-    "AgentRuntimeConfig",
-    "AppConfig",
-    "GroupRuntimeConfig",
-    "LLMProviderConfig",
-    "LoggingConfig",
-    "MemberRuntimeConfig",
-    "PromptConfig",
-    "SkillsConfig",
-    "ToolConfig",
-    "UsageConfig",
-    "AgentServiceOptions",
-    "AgentAppService",
-    "GroupAppService",
-    "GroupServiceOptions",
-    "HistoryEntry",
-    "add_group_member",
-    "app_config_from_options",
-    "build_agent",
-    "build_group",
-    "load_group_member_configs",
-    "member_config_from_command",
-    "member_runtime_configs",
-]
+_EXPORTS = {
+    'AgentRuntimeConfig': ('application.agent_config', 'AgentRuntimeConfig'),
+    'LLMProviderConfig': ('application.agent_config', 'LLMProviderConfig'),
+    'LoggingConfig': ('application.agent_config', 'LoggingConfig'),
+    'PromptConfig': ('application.agent_config', 'PromptConfig'),
+    'SkillsConfig': ('application.agent_config', 'SkillsConfig'),
+    'ToolConfig': ('application.agent_config', 'ToolConfig'),
+    'UsageConfig': ('application.agent_config', 'UsageConfig'),
+    'build_agent': ('application.agent_builder', 'build_agent'),
+    'AgentAppService': ('application.agent_service', 'AgentAppService'),
+    'HistoryEntry': ('application.agent_service', 'HistoryEntry'),
+    'AgentServiceOptions': ('application.options', 'AgentServiceOptions'),
+    'AgentAppConfig': ('application.agent_config', 'AgentAppConfig'),
+}
+__all__ = list(_EXPORTS)
+
+def __getattr__(name):
+    if name not in _EXPORTS:
+        raise AttributeError(name)
+    module, attribute = _EXPORTS[name]
+    value = getattr(import_module(module), attribute)
+    globals()[name] = value
+    return value

@@ -1,105 +1,75 @@
-"""一些内置工具示例。"""
+"""Built-in terminal tool."""
 
 from __future__ import annotations
 
-import os
 import re
 import shlex
-import subprocess
+from urllib.parse import unquote, urlsplit
 
 from tools.decorator import tool
-from tools.file_ops import _is_within_workspace, _resolve, _workspace_error
+from tools.workspace import _is_within_workspace, _resolve, _workspace_error, current_workspace
+from tools.results import ToolFailure
+from tools.process_io import run_shell_bounded
 
 
-@tool
-def get_weather(city: str) -> str:
-    """获取指定城市的天气。
-
-    Args:
-        city: 城市名称，如：北京、上海
-    """
-    return "[暂未实现] get_weather 只是示例工具，当前没有接入天气数据源。"
-
-
-@tool
-def search(query: str, limit: int = 5) -> str:
-    """搜索互联网内容。
-
-    Args:
-        query: 搜索关键词
-        limit: 返回结果数量，默认5条
-    """
-    return "[暂未实现] search 只是示例工具，当前没有接入搜索服务。"
-
-
-@tool
-def calculate(expression: str) -> str:
-    """计算一个数学表达式。
-
-    Args:
-        expression: 数学表达式，如 "1+2*3"
-    """
-    return "[暂未实现] calculate 只是示例工具，当前没有接入表达式求值器。"
+TERMINAL_MAX_CHARS = 20_000
 
 
 @tool
 def terminal(command: str, timeout: int = 30, cwd: str = ".") -> str:
-    """在终端执行 shell 命令并返回输出。
+    """Run a shell command and return its output.
 
     Args:
-        command: 要执行的 shell 命令
-        timeout: 超时时间（秒），默认30秒
-        cwd: 命令执行目录，必须位于允许的工作区内，默认当前目录
+        command: Shell command to execute.
+        timeout: Timeout in seconds; defaults to 30.
+        cwd: Working directory within an allowed workspace; defaults to the Agent working directory.
     """
     try:
         workdir = _resolve(cwd)
         if not _is_within_workspace(workdir):
             return _workspace_error(workdir)
         if not workdir.exists() or not workdir.is_dir():
-            return f"[错误] cwd 不是有效目录: {workdir}"
+            return ToolFailure(f"[Error] cwd is not a valid directory: {workdir}")
         unsafe = _terminal_workspace_violation(command)
         if unsafe:
             return unsafe
         timeout = max(1, min(int(timeout), 120))
-        result = subprocess.run(
-            command,
-            shell=True,
-            cwd=str(workdir),
-            capture_output=True,
-            text=False,  # 以字节接收，手动解码避免 UnicodeDecodeError
-            timeout=timeout,
+        result = run_shell_bounded(command, cwd=str(workdir), timeout=timeout)
+        output = result.stdout.decode('utf-8', errors='replace')
+        stderr = result.stderr.decode('utf-8', errors='replace')
+        # Give each populated pipe a share so verbose stdout cannot hide errors.
+        stdout_limit = TERMINAL_MAX_CHARS // 2 if output and stderr else TERMINAL_MAX_CHARS
+        stderr_limit = TERMINAL_MAX_CHARS - min(len(output), stdout_limit)
+        truncated = (
+            len(output) > stdout_limit or len(stderr) > stderr_limit
+            or result.stdout_bytes > len(result.stdout) or result.stderr_bytes > len(result.stderr)
         )
-        # 手动解码：优先 utf-8，失败则用 replace 兜底
-        def _decode(b: bytes) -> str:
-            if not b:
-                return ""
-            return b.decode("utf-8", errors="replace")
-
-        output = _decode(result.stdout or b"")
-        stderr = _decode(result.stderr or b"")
+        output = output[:stdout_limit]
+        stderr = stderr[:stderr_limit]
         if stderr:
             output += (f"\n[stderr]\n{stderr}" if output else stderr)
+        if truncated:
+            output += (f'\n... (Output truncated; read {result.stdout_bytes} bytes from stdout, '
+                       f'{result.stderr_bytes} bytes from stderr)')
+        if result.timed_out:
+            return ToolFailure(f"[Timeout] Command did not complete within {timeout} seconds" + (f'\n{output}' if output else ''))
         if result.returncode != 0:
             output += f"\n[exit code: {result.returncode}]"
         output = output.strip()
-        # 截断超长输出，避免 OOM / 刷屏
-        max_chars = 20000
-        if len(output) > max_chars:
-            output = output[:max_chars] + f"\n... (输出已截断，共 {len(output)} 字符)"
-        return output or "(无输出)"
-    except subprocess.TimeoutExpired:
-        return f"[超时] 命令在 {timeout} 秒内未完成"
+        if result.returncode != 0:
+            return ToolFailure(output)
+        return output or "(No output)"
     except Exception as e:
-        return f"[执行失败] {type(e).__name__}: {e}"
+        return ToolFailure(f"[Execution failed] {type(e).__name__}: {e}")
 
 
 def _terminal_workspace_violation(command: str) -> str:
     """Reject obvious command references outside configured workspace roots.
 
-    This is a guardrail, not a full shell sandbox. Set MAS_ALLOW_UNSAFE_TERMINAL=1
-    to bypass it in trusted local development.
+    This is a guardrail, not a full shell sandbox. The explicit workspace
+    setting allow_unsafe_terminal bypasses it for trusted local development.
     """
-    if os.environ.get("MAS_ALLOW_UNSAFE_TERMINAL") == "1":
+    if current_workspace().allow_unsafe_terminal:
         return ""
     paths = set(_absolute_path_tokens(command))
     for path_text in paths:
@@ -118,7 +88,16 @@ def _absolute_path_tokens(command: str) -> list[str]:
     for token in shell_tokens:
         if token.startswith(("/", "~")):
             tokens.append(token)
-    tokens.extend(re.findall(r"(?<![\w:])(?:~|/)[^\s;&|<>`'\"]+", command))
+    # URI slashes are not local filesystem arguments. Mask complete URI spans
+    # before the fallback scan so https://host/path is not read as /host/path.
+    def mask_uri(match: re.Match[str]) -> str:
+        uri = urlsplit(match.group())
+        if uri.scheme.lower() == "file":
+            tokens.append(unquote(uri.path))
+        return ""
+
+    path_text = re.sub(r"\b[A-Za-z][A-Za-z0-9+.-]*://[^\s;&|<>`'\"]+", mask_uri, command)
+    tokens.extend(re.findall(r"(?<![\w:/])(?:~|/)[^\s;&|<>`'\"]+", path_text))
     return [
         token.rstrip("),.]")
         for token in tokens

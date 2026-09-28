@@ -1,0 +1,820 @@
+{
+  "date": "2026-09-28",
+  "protocol": "heldout-v1",
+  "production_or_prompt_edits_after_first_provider_call": false,
+  "frozen_files_verified_unchanged": 99,
+  "settings": {
+    "context_window": 131072,
+    "context_input_limit": null,
+    "max_tokens": 2048,
+    "temperature": 0.7,
+    "provider_timeout": 60,
+    "member_run_timeout": 150,
+    "member_max_turns": 10,
+    "invocation_timeout": 420,
+    "max_runs": 16
+  },
+  "offline": {
+    "passed": 1126,
+    "skipped": 12,
+    "duration_seconds": 34.64
+  },
+  "live": {
+    "passed": 4,
+    "failed": 2,
+    "duration_seconds": 140.49,
+    "runs": 46,
+    "provider_calls": 73
+  },
+  "cases": [
+    {
+      "task": "access",
+      "repetition": 1,
+      "passed": true,
+      "runs": 7,
+      "calls": 12,
+      "calls_by_member": {
+        "coordinator": 4,
+        "identity": 2,
+        "inventory": 3,
+        "policy": 3
+      },
+      "compactions": 0,
+      "drive_result": {
+        "status": "waiting",
+        "reason": "No eligible request for an available member",
+        "admitted_count": 7,
+        "missing_reply_ids": [],
+        "revision": 66,
+        "blocked_assignment_ids": []
+      },
+      "terminal_reason": "completed",
+      "all_runs_settled_without_error": true,
+      "evidence_reads": [
+        "identity",
+        "inventory",
+        "policy"
+      ],
+      "complete_original_sources_in_final_input": {
+        "identity": true,
+        "inventory": true,
+        "policy": true
+      },
+      "provider_errors": [],
+      "tool_calls": {
+        "read_evidence": 3,
+        "group_post": 6,
+        "group_request": 4,
+        "group_yield": 7
+      },
+      "final_artifacts": [
+        {
+          "kind": "access_review",
+          "decisions": [
+            {
+              "request": "Q1",
+              "allowed": true,
+              "reason": "allowed"
+            },
+            {
+              "request": "Q2",
+              "allowed": false,
+              "reason": "missing_group"
+            },
+            {
+              "request": "Q3",
+              "allowed": false,
+              "reason": "mfa_required"
+            },
+            {
+              "request": "Q4",
+              "allowed": false,
+              "reason": "inactive"
+            },
+            {
+              "request": "Q5",
+              "allowed": false,
+              "reason": "explicit_deny"
+            },
+            {
+              "request": "Q6",
+              "allowed": true,
+              "reason": "allowed"
+            }
+          ],
+          "evidence_refs": [
+            "IDENTITY-1-a3ec3847",
+            "INVENTORY-1-a3ec3847",
+            "POLICY-1-a3ec3847"
+          ]
+        }
+      ],
+      "expected": {
+        "kind": "access_review",
+        "decisions": [
+          {
+            "request": "Q1",
+            "allowed": true,
+            "reason": "allowed"
+          },
+          {
+            "request": "Q2",
+            "allowed": false,
+            "reason": "missing_group"
+          },
+          {
+            "request": "Q3",
+            "allowed": false,
+            "reason": "mfa_required"
+          },
+          {
+            "request": "Q4",
+            "allowed": false,
+            "reason": "inactive"
+          },
+          {
+            "request": "Q5",
+            "allowed": false,
+            "reason": "explicit_deny"
+          },
+          {
+            "request": "Q6",
+            "allowed": true,
+            "reason": "allowed"
+          }
+        ],
+        "evidence_refs": [
+          "IDENTITY-1-a3ec3847",
+          "INVENTORY-1-a3ec3847",
+          "POLICY-1-a3ec3847"
+        ]
+      },
+      "provider_span_seconds": 22.33
+    },
+    {
+      "task": "delivery",
+      "repetition": 1,
+      "passed": false,
+      "runs": 7,
+      "calls": 11,
+      "calls_by_member": {
+        "coordinator": 4,
+        "orders": 3,
+        "warehouse": 2,
+        "carriers": 2
+      },
+      "compactions": 0,
+      "drive_result": {
+        "status": "waiting",
+        "reason": "No eligible request for an available member",
+        "admitted_count": 7,
+        "missing_reply_ids": [],
+        "revision": 65,
+        "blocked_assignment_ids": []
+      },
+      "terminal_reason": "cancelled",
+      "all_runs_settled_without_error": true,
+      "evidence_reads": [
+        "orders",
+        "warehouse",
+        "carriers"
+      ],
+      "complete_original_sources_in_final_input": {
+        "orders": true,
+        "warehouse": true,
+        "carriers": true
+      },
+      "provider_errors": [],
+      "tool_calls": {
+        "read_evidence": 3,
+        "group_post": 6,
+        "group_request": 4,
+        "group_yield": 7
+      },
+      "final_artifacts": [
+        {
+          "kind": "delivery_plan",
+          "orders": [
+            {
+              "order": "O1",
+              "status": "shipped",
+              "carrier": "cold_east"
+            },
+            {
+              "order": "O2",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O3",
+              "status": "shipped",
+              "carrier": "ground_east"
+            },
+            {
+              "order": "O4",
+              "status": "out_of_stock",
+              "carrier": "fast_east"
+            },
+            {
+              "order": "O5",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O6",
+              "status": "out_of_stock",
+              "carrier": "ground_west"
+            }
+          ],
+          "remaining_units": 1,
+          "total_shipping_fee": 12,
+          "evidence_refs": [
+            "ORDERS-1-ebc7cca4",
+            "STOCK-1-ebc7cca4",
+            "CARRIERS-1-ebc7cca4"
+          ]
+        }
+      ],
+      "expected": {
+        "kind": "delivery_plan",
+        "orders": [
+          {
+            "order": "O1",
+            "status": "shipped",
+            "carrier": "cold_east"
+          },
+          {
+            "order": "O2",
+            "status": "no_carrier",
+            "carrier": null
+          },
+          {
+            "order": "O3",
+            "status": "shipped",
+            "carrier": "ground_east"
+          },
+          {
+            "order": "O4",
+            "status": "out_of_stock",
+            "carrier": null
+          },
+          {
+            "order": "O5",
+            "status": "no_carrier",
+            "carrier": null
+          },
+          {
+            "order": "O6",
+            "status": "shipped",
+            "carrier": "ground_west"
+          }
+        ],
+        "remaining_units": 0,
+        "total_shipping_fee": 17,
+        "evidence_refs": [
+          "ORDERS-1-ebc7cca4",
+          "STOCK-1-ebc7cca4",
+          "CARRIERS-1-ebc7cca4"
+        ]
+      },
+      "provider_span_seconds": 21.91
+    },
+    {
+      "task": "release",
+      "repetition": 1,
+      "passed": true,
+      "runs": 11,
+      "calls": 18,
+      "calls_by_member": {
+        "coordinator": 6,
+        "components": 2,
+        "compatibility": 6,
+        "decisions": 4
+      },
+      "compactions": 0,
+      "drive_result": {
+        "status": "waiting",
+        "reason": "No eligible request for an available member",
+        "admitted_count": 11,
+        "missing_reply_ids": [],
+        "revision": 114,
+        "blocked_assignment_ids": []
+      },
+      "terminal_reason": "completed",
+      "all_runs_settled_without_error": true,
+      "evidence_reads": [
+        "components",
+        "compatibility",
+        "decisions",
+        "compatibility",
+        "decisions"
+      ],
+      "complete_original_sources_in_final_input": {
+        "components": true,
+        "compatibility": true,
+        "decisions": true
+      },
+      "provider_errors": [],
+      "tool_calls": {
+        "read_evidence": 5,
+        "group_post": 9,
+        "group_request": 7,
+        "group_yield": 11
+      },
+      "final_artifacts": [
+        {
+          "kind": "release_review",
+          "releases": [
+            {
+              "release": "blue",
+              "revision": 1,
+              "roots": [
+                "api2",
+                "monitor1"
+              ],
+              "closure": [
+                "api2",
+                "monitor1",
+                "core2",
+                "adapter2",
+                "storage2",
+                "core1",
+                "storage1"
+              ],
+              "conflicts": [
+                "core_generation",
+                "storage_generation",
+                "adapter_storage"
+              ],
+              "deployable": false
+            },
+            {
+              "release": "green",
+              "revision": 2,
+              "roots": [
+                "api2"
+              ],
+              "closure": [
+                "api2",
+                "core2",
+                "adapter2",
+                "storage2"
+              ],
+              "conflicts": [],
+              "deployable": true
+            }
+          ],
+          "evidence_refs": [
+            "GRAPH-1-179ee52b",
+            "COMPAT-1-179ee52b",
+            "DECISIONS-1-179ee52b"
+          ]
+        }
+      ],
+      "expected": {
+        "kind": "release_review",
+        "releases": [
+          {
+            "release": "blue",
+            "revision": 1,
+            "roots": [
+              "api2",
+              "monitor1"
+            ],
+            "closure": [
+              "api2",
+              "monitor1",
+              "core2",
+              "adapter2",
+              "storage2",
+              "core1",
+              "storage1"
+            ],
+            "conflicts": [
+              "core_generation",
+              "storage_generation",
+              "adapter_storage"
+            ],
+            "deployable": false
+          },
+          {
+            "release": "green",
+            "revision": 2,
+            "roots": [
+              "api2"
+            ],
+            "closure": [
+              "api2",
+              "core2",
+              "adapter2",
+              "storage2"
+            ],
+            "conflicts": [],
+            "deployable": true
+          }
+        ],
+        "evidence_refs": [
+          "GRAPH-1-179ee52b",
+          "COMPAT-1-179ee52b",
+          "DECISIONS-1-179ee52b"
+        ]
+      },
+      "provider_span_seconds": 27.52
+    },
+    {
+      "task": "access",
+      "repetition": 2,
+      "passed": true,
+      "runs": 7,
+      "calls": 11,
+      "calls_by_member": {
+        "coordinator": 5,
+        "identity": 2,
+        "inventory": 2,
+        "policy": 2
+      },
+      "compactions": 0,
+      "drive_result": {
+        "status": "waiting",
+        "reason": "No eligible request for an available member",
+        "admitted_count": 7,
+        "missing_reply_ids": [],
+        "revision": 64,
+        "blocked_assignment_ids": []
+      },
+      "terminal_reason": "completed",
+      "all_runs_settled_without_error": true,
+      "evidence_reads": [
+        "inventory",
+        "policy",
+        "identity"
+      ],
+      "complete_original_sources_in_final_input": {
+        "identity": true,
+        "inventory": true,
+        "policy": true
+      },
+      "provider_errors": [],
+      "tool_calls": {
+        "read_evidence": 3,
+        "group_post": 6,
+        "group_request": 4,
+        "group_yield": 7,
+        "group_message": 3
+      },
+      "final_artifacts": [
+        {
+          "kind": "access_review",
+          "decisions": [
+            {
+              "request": "Q1",
+              "allowed": true,
+              "reason": "allowed"
+            },
+            {
+              "request": "Q2",
+              "allowed": false,
+              "reason": "missing_group"
+            },
+            {
+              "request": "Q3",
+              "allowed": false,
+              "reason": "mfa_required"
+            },
+            {
+              "request": "Q4",
+              "allowed": false,
+              "reason": "inactive"
+            },
+            {
+              "request": "Q5",
+              "allowed": false,
+              "reason": "explicit_deny"
+            },
+            {
+              "request": "Q6",
+              "allowed": true,
+              "reason": "allowed"
+            }
+          ],
+          "evidence_refs": [
+            "IDENTITY-2-53263afa",
+            "INVENTORY-2-53263afa",
+            "POLICY-2-53263afa"
+          ]
+        }
+      ],
+      "expected": {
+        "kind": "access_review",
+        "decisions": [
+          {
+            "request": "Q1",
+            "allowed": true,
+            "reason": "allowed"
+          },
+          {
+            "request": "Q2",
+            "allowed": false,
+            "reason": "missing_group"
+          },
+          {
+            "request": "Q3",
+            "allowed": false,
+            "reason": "mfa_required"
+          },
+          {
+            "request": "Q4",
+            "allowed": false,
+            "reason": "inactive"
+          },
+          {
+            "request": "Q5",
+            "allowed": false,
+            "reason": "explicit_deny"
+          },
+          {
+            "request": "Q6",
+            "allowed": true,
+            "reason": "allowed"
+          }
+        ],
+        "evidence_refs": [
+          "IDENTITY-2-53263afa",
+          "INVENTORY-2-53263afa",
+          "POLICY-2-53263afa"
+        ]
+      },
+      "provider_span_seconds": 23.74
+    },
+    {
+      "task": "delivery",
+      "repetition": 2,
+      "passed": false,
+      "runs": 7,
+      "calls": 10,
+      "calls_by_member": {
+        "coordinator": 4,
+        "orders": 2,
+        "warehouse": 2,
+        "carriers": 2
+      },
+      "compactions": 0,
+      "drive_result": {
+        "status": "waiting",
+        "reason": "No eligible request for an available member",
+        "admitted_count": 7,
+        "missing_reply_ids": [],
+        "revision": 65,
+        "blocked_assignment_ids": []
+      },
+      "terminal_reason": "cancelled",
+      "all_runs_settled_without_error": true,
+      "evidence_reads": [
+        "orders",
+        "carriers",
+        "warehouse"
+      ],
+      "complete_original_sources_in_final_input": {
+        "orders": true,
+        "warehouse": true,
+        "carriers": true
+      },
+      "provider_errors": [],
+      "tool_calls": {
+        "read_evidence": 3,
+        "group_post": 6,
+        "group_request": 4,
+        "group_yield": 7
+      },
+      "final_artifacts": [
+        {
+          "kind": "delivery_plan",
+          "orders": [
+            {
+              "order": "O1",
+              "status": "shipped",
+              "carrier": "cold_east"
+            },
+            {
+              "order": "O2",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O3",
+              "status": "shipped",
+              "carrier": "ground_east"
+            },
+            {
+              "order": "O4",
+              "status": "shipped",
+              "carrier": "fast_east"
+            },
+            {
+              "order": "O5",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O6",
+              "status": "out_of_stock",
+              "carrier": null
+            }
+          ],
+          "remaining_units": 1,
+          "total_shipping_fee": 21,
+          "evidence_refs": [
+            "ORDERS-2-9bc8f02d",
+            "STOCK-2-9bc8f02d",
+            "CARRIERS-2-9bc8f02d"
+          ]
+        }
+      ],
+      "expected": {
+        "kind": "delivery_plan",
+        "orders": [
+          {
+            "order": "O1",
+            "status": "shipped",
+            "carrier": "cold_east"
+          },
+          {
+            "order": "O2",
+            "status": "no_carrier",
+            "carrier": null
+          },
+          {
+            "order": "O3",
+            "status": "shipped",
+            "carrier": "ground_east"
+          },
+          {
+            "order": "O4",
+            "status": "out_of_stock",
+            "carrier": null
+          },
+          {
+            "order": "O5",
+            "status": "no_carrier",
+            "carrier": null
+          },
+          {
+            "order": "O6",
+            "status": "shipped",
+            "carrier": "ground_west"
+          }
+        ],
+        "remaining_units": 0,
+        "total_shipping_fee": 17,
+        "evidence_refs": [
+          "ORDERS-2-9bc8f02d",
+          "STOCK-2-9bc8f02d",
+          "CARRIERS-2-9bc8f02d"
+        ]
+      },
+      "provider_span_seconds": 21.59
+    },
+    {
+      "task": "release",
+      "repetition": 2,
+      "passed": true,
+      "runs": 7,
+      "calls": 11,
+      "calls_by_member": {
+        "coordinator": 5,
+        "components": 2,
+        "compatibility": 2,
+        "decisions": 2
+      },
+      "compactions": 0,
+      "drive_result": {
+        "status": "waiting",
+        "reason": "No eligible request for an available member",
+        "admitted_count": 7,
+        "missing_reply_ids": [],
+        "revision": 66,
+        "blocked_assignment_ids": []
+      },
+      "terminal_reason": "completed",
+      "all_runs_settled_without_error": true,
+      "evidence_reads": [
+        "components",
+        "decisions",
+        "compatibility"
+      ],
+      "complete_original_sources_in_final_input": {
+        "components": true,
+        "compatibility": true,
+        "decisions": true
+      },
+      "provider_errors": [],
+      "tool_calls": {
+        "read_evidence": 3,
+        "group_post": 6,
+        "group_request": 4,
+        "group_yield": 7,
+        "group_history": 1,
+        "group_message": 2
+      },
+      "final_artifacts": [
+        {
+          "kind": "release_review",
+          "releases": [
+            {
+              "release": "blue",
+              "revision": 1,
+              "roots": [
+                "api2",
+                "monitor1"
+              ],
+              "closure": [
+                "api2",
+                "monitor1",
+                "core2",
+                "adapter2",
+                "core1",
+                "storage2",
+                "storage1"
+              ],
+              "conflicts": [
+                "core_generation",
+                "storage_generation",
+                "adapter_storage"
+              ],
+              "deployable": false
+            },
+            {
+              "release": "green",
+              "revision": 2,
+              "roots": [
+                "api2"
+              ],
+              "closure": [
+                "api2",
+                "core2",
+                "adapter2",
+                "storage2"
+              ],
+              "conflicts": [],
+              "deployable": true
+            }
+          ],
+          "evidence_refs": [
+            "GRAPH-2-60ff6b98",
+            "COMPAT-2-60ff6b98",
+            "DECISIONS-2-60ff6b98"
+          ]
+        }
+      ],
+      "expected": {
+        "kind": "release_review",
+        "releases": [
+          {
+            "release": "blue",
+            "revision": 1,
+            "roots": [
+              "api2",
+              "monitor1"
+            ],
+            "closure": [
+              "api2",
+              "monitor1",
+              "core2",
+              "adapter2",
+              "storage2",
+              "core1",
+              "storage1"
+            ],
+            "conflicts": [
+              "core_generation",
+              "storage_generation",
+              "adapter_storage"
+            ],
+            "deployable": false
+          },
+          {
+            "release": "green",
+            "revision": 2,
+            "roots": [
+              "api2"
+            ],
+            "closure": [
+              "api2",
+              "core2",
+              "adapter2",
+              "storage2"
+            ],
+            "conflicts": [],
+            "deployable": true
+          }
+        ],
+        "evidence_refs": [
+          "GRAPH-2-60ff6b98",
+          "COMPAT-2-60ff6b98",
+          "DECISIONS-2-60ff6b98"
+        ]
+      },
+      "provider_span_seconds": 22.93
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.vscode
+.pytest_cache
+.superpowers
+
+# Generated editor browsing databases and SQLite sidecars
+.vscode/browse.vc.db*
+
+# Local runtime configuration
+.env
+.env.*
+!.env.example
+
+# Local test, agent and conversation artifacts
+.pytest_cache/
+.superpowers/
+*.sqlite
+*.sqlite-*
+*.sqlite.lock
+*.sqlite3
+*.sqlite3-*
+*.sqlite3.lock
+
+# Runtime logs and generated review notes
+logs/*.log
+MAS_Production_Roadmap.md
+Scene_Instruction_Wave1.md
+Story Bible
+realistic_thriller_horror_menu.md
+story_architect_grounding_strategy.md
+story_architect_upgraded_proposals.md
+reliability_operational_risk_report.md
+system_architecture_upgrade_proposal.md

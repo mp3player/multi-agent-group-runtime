@@ -1,203 +1,297 @@
-"""ReAct execution loops for single-agent runs."""
+"""I/O drivers and public adapters for the shared Agent turn machine."""
 
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from contextlib import aclosing, asynccontextmanager, closing, contextmanager
+from copy import deepcopy
 from dataclasses import dataclass
+import logging
+import time
+from typing import TypeVar
 
-from models import AI, Chunk, ToolCall
-
+from models import Chunk
+from core.agent_runtime.events import AgentEvent
+from core.agent_runtime.deadlines import DeadlineExceeded, await_before
+from core.agent_runtime.ports import AgentRuntimePort
+from core.agent_runtime.response_parser import StreamResponseAccumulator
 from core.agent_runtime.run_state import AgentTimeoutError
-from core.agent_runtime.runtime_adapter import AgentRuntimeAdapter
+from core.agent_runtime.context_management.policy import CompactionRequest, ContextIORequest
+from core.agent_runtime.context_management.errors import CompactionError
+from core.llm_runtime.errors import ContextWindowExceeded
+from core.agent_runtime.turn_machine import (
+    AgentTurnMachine,
+    ModelRequest,
+    ToolRequest,
+    advance,
+)
 
-FALLBACK_MESSAGE = "(达到最大轮数，未获得最终回复)"
+T = TypeVar("T")
+STREAM_CLEANUP_TIMEOUT = 0.25
 
 
 @dataclass(slots=True)
 class AgentReactLoop:
-    """Run sync/async ReAct loops through a runtime adapter."""
+    """Sync/async differ only in how model I/O is driven, never in turn policy."""
 
-    runtime: AgentRuntimeAdapter
+    runtime: AgentRuntimePort
 
     def run(self, message: str) -> str:
-        """Run one non-streaming sync ReAct exchange."""
-        deadline = self.runtime.deadline()
-        messages = self.runtime.build_invoke_messages(message)
-        tools = self.runtime.tools_payload()
-
-        for _ in range(self.runtime.max_turns):
-            self.runtime.check_deadline(deadline)
-            data = self.runtime.llm.invoke(
-                messages,
-                max_tokens=self.runtime.max_tokens,
-                tools=tools,
-                tool_choice="auto" if tools else None,
-            )
-            self.runtime.check_deadline(deadline)
-            ai, tool_calls = self.runtime.parse_invoke_response(data)
-
-            if not tool_calls:
-                self.runtime.add_session_message(ai)
-                return ai.message
-
-            self._record_tool_round(ai, tool_calls, deadline)
-            if self.runtime.should_stop_after_tool_calls(tool_calls):
-                return ""
-            messages = self._refresh_messages()
-
-        return self._record_fallback()
+        result = ""
+        with closing(self.run_events(message)) as events:
+            for event in events:
+                if event.type == "run_end":
+                    result = event.result or ""
+        return result
 
     def run_stream(self, message: str) -> Iterator[Chunk]:
-        """Run one streaming sync ReAct exchange."""
-        deadline = self.runtime.deadline()
-        messages = self.runtime.build_invoke_messages(message)
-        tools = self.runtime.tools_payload()
-
-        for _ in range(self.runtime.max_turns):
-            self.runtime.check_deadline(deadline)
-            content_parts: list[str] = []
-            reasoning_parts: list[str] = []
-            final_tool_calls: list[ToolCall] | None = None
-
-            for chunk in self.runtime.llm.stream(
-                messages,
-                max_tokens=self.runtime.max_tokens,
-                tools=tools,
-                tool_choice="auto" if tools else None,
-            ):
-                self.runtime.check_deadline(deadline)
-                if chunk.tool_calls:
-                    final_tool_calls = chunk.tool_calls
-                    yield chunk
-                    continue
-                if chunk.finish_reason:
-                    continue
-                if chunk.message:
-                    content_parts.append(chunk.message)
-                    yield chunk
-                if chunk.reasoning:
-                    reasoning_parts.append(chunk.reasoning)
-                    yield chunk
-
-            ai = AI(
-                message="".join(content_parts),
-                reasoning="".join(reasoning_parts),
-                tool_calls=final_tool_calls,
-            )
-            if not final_tool_calls:
-                self.runtime.add_session_message(ai)
-                return
-
-            self._record_tool_round(ai, final_tool_calls, deadline)
-            if self.runtime.should_stop_after_tool_calls(final_tool_calls):
-                return
-            messages = self._refresh_messages()
-        return
+        with closing(self.run_events(message, stream=True)) as events:
+            for event in events:
+                if event.chunk is not None:
+                    yield event.chunk
 
     async def arun(self, message: str) -> str:
-        """Run one non-streaming async ReAct exchange."""
-        timeout = self.runtime.run_timeout
-        if timeout is not None and timeout > 0:
-            try:
-                return await asyncio.wait_for(
-                    self._arun_unbounded(message),
-                    timeout,
-                )
-            except TimeoutError as exc:
-                raise AgentTimeoutError(
-                    f"Agent run exceeded timeout {timeout:g}s"
-                ) from exc
-        return await self._arun_unbounded(message)
-
-    async def _arun_unbounded(self, message: str) -> str:
-        messages = self.runtime.build_invoke_messages(message)
-        tools = self.runtime.tools_payload()
-
-        for _ in range(self.runtime.max_turns):
-            data = await self.runtime.llm.ainvoke(
-                messages,
-                max_tokens=self.runtime.max_tokens,
-                tools=tools,
-                tool_choice="auto" if tools else None,
-            )
-            ai, tool_calls = self.runtime.parse_invoke_response(data)
-
-            if not tool_calls:
-                self.runtime.add_session_message(ai)
-                return ai.message
-
-            self._record_tool_round(ai, tool_calls, None)
-            if self.runtime.should_stop_after_tool_calls(tool_calls):
-                return ""
-            messages = self._refresh_messages()
-
-        return self._record_fallback()
+        result = ""
+        async with aclosing(self.arun_events(message)) as events:
+            async for event in events:
+                if event.type == "run_end":
+                    result = event.result or ""
+        return result
 
     async def arun_stream(self, message: str) -> AsyncIterator[Chunk]:
-        """Run one streaming async ReAct exchange."""
-        deadline = self.runtime.deadline()
-        messages = self.runtime.build_invoke_messages(message)
-        tools = self.runtime.tools_payload()
+        async with aclosing(self.arun_events(message, stream=True)) as events:
+            async for event in events:
+                if event.chunk is not None:
+                    yield event.chunk
 
-        for _ in range(self.runtime.max_turns):
-            self.runtime.check_deadline(deadline)
-            content_parts: list[str] = []
-            reasoning_parts: list[str] = []
-            final_tool_calls: list[ToolCall] | None = None
+    def run_events(self, message: str | None, *, stream: bool = False,
+                   compact: bool = False, focus: str = '', prepare_only: bool = False) -> Iterator[AgentEvent]:
+        with self._execution() as machine, closing(machine.steps(message, stream=stream, compact=compact, focus=focus, prepare_only=prepare_only)) as steps:
+            step = advance(steps)
+            while step is not None:
+                if isinstance(step, AgentEvent):
+                    yield self._deliver(step)
+                    if step.type == 'run_start':
+                        self.runtime.run_state.check_stop()
+                    step = advance(steps)
+                elif isinstance(step, ModelRequest):
+                    self.runtime.run_state.check_stop()
+                    self.runtime.check_deadline(machine.deadline)
+                    self.runtime.run_state.before_main_inference()
+                    self.runtime.check_deadline(machine.deadline)
+                    self.runtime.run_state.mark_main_inference()
+                    visible = False
+                    try:
+                        if stream:
+                            accumulator = StreamResponseAccumulator()
+                            source = self.runtime.llm.stream(step.messages, **step.options())
+                            with _close_sync_stream(source):
+                                for chunk in source:
+                                    self.runtime.check_deadline(machine.deadline)
+                                    self.runtime.context_manager.observe_usage(getattr(chunk, 'usage', None),
+                                                                              phase='main', estimate=step.input_tokens)
+                                    if accumulator.add(chunk):
+                                        visible = True
+                                        yield self._deliver(machine.event("message_delta", chunk=chunk))
+                            response = accumulator.response()
+                        else:
+                            data = self.runtime.llm.invoke(step.messages, **step.options())
+                            self.runtime.context_manager.observe_usage(data.get('usage') if isinstance(data, dict) else None,
+                                                                      phase='main', estimate=step.input_tokens)
+                            response, _ = self.runtime.parse_invoke_response(data)
+                    except ContextWindowExceeded as error:
+                        if visible:
+                            raise
+                        step = advance(steps, error=error)
+                        continue
+                    self.runtime.check_deadline(machine.deadline)
+                    step = advance(steps, response)
+                elif isinstance(step, CompactionRequest):
+                    try:
+                        self.runtime.run_state.check_stop()
+                        self.runtime.check_deadline(machine.deadline)
+                        data = self.runtime.llm.invoke(step.messages, **step.options())
+                        self.runtime.check_deadline(machine.deadline)
+                        response = self._summary_response(data)
+                    except Exception as error:
+                        step = advance(steps, error=error)
+                    else:
+                        step = advance(steps, response)
+                elif isinstance(step, ContextIORequest):
+                    try:
+                        if machine.status == 'closed':
+                            self.runtime.run_state.check_stop()
+                        self.runtime.check_deadline(machine.deadline)
+                        result = step.operation()
+                        self.runtime.check_deadline(machine.deadline)
+                    except Exception as error:
+                        step = advance(steps, error=error)
+                    else:
+                        step = advance(steps, result)
+                elif isinstance(step, ToolRequest):
+                    self.runtime.run_state.check_stop()
+                    self.runtime.check_deadline(machine.deadline)
+                    result = self.runtime.execute_tool_calls([step.call])[0]
+                    step = advance(steps, result)
+        # On failure/close, subscribers still receive run_end, while the caller
+        # receives the original exception instead of a false successful result.
+        yield deepcopy(machine.end_event())
 
-            async for chunk in self.runtime.llm.astream(
-                messages,
-                max_tokens=self.runtime.max_tokens,
-                tools=tools,
-                tool_choice="auto" if tools else None,
-            ):
-                self.runtime.check_deadline(deadline)
-                if chunk.tool_calls:
-                    final_tool_calls = chunk.tool_calls
-                    yield chunk
-                    continue
-                if chunk.finish_reason:
-                    continue
-                if chunk.message:
-                    content_parts.append(chunk.message)
-                    yield chunk
-                if chunk.reasoning:
-                    reasoning_parts.append(chunk.reasoning)
-                    yield chunk
+    async def arun_events(self, message: str | None, *, stream: bool = False,
+                         compact: bool = False, focus: str = '') -> AsyncIterator[AgentEvent]:
+        with self._execution() as machine, closing(machine.steps(message, stream=stream, compact=compact, focus=focus)) as steps:
+            step = advance(steps)
+            while step is not None:
+                if isinstance(step, AgentEvent):
+                    yield self._deliver(step)
+                    step = advance(steps)
+                elif isinstance(step, ModelRequest):
+                    self.runtime.check_deadline(machine.deadline)
+                    visible = False
+                    try:
+                        if stream:
+                            accumulator = StreamResponseAccumulator()
+                            source = self.runtime.llm.astream(step.messages, **step.options())
+                            async with _close_async_stream(source):
+                                while True:
+                                    try:
+                                        chunk = await self._await_io(source.__anext__, machine.deadline)
+                                    except StopAsyncIteration:
+                                        break
+                                    self.runtime.context_manager.observe_usage(getattr(chunk, 'usage', None),
+                                                                              phase='main', estimate=step.input_tokens)
+                                    if accumulator.add(chunk):
+                                        visible = True
+                                        yield self._deliver(machine.event("message_delta", chunk=chunk))
+                            response = accumulator.response()
+                        else:
+                            data = await self._await_io(
+                                lambda: self.runtime.llm.ainvoke(step.messages, **step.options()),
+                                machine.deadline,
+                            )
+                            self.runtime.context_manager.observe_usage(data.get('usage') if isinstance(data, dict) else None,
+                                                                      phase='main', estimate=step.input_tokens)
+                            response, _ = self.runtime.parse_invoke_response(data)
+                    except ContextWindowExceeded as error:
+                        if visible:
+                            raise
+                        step = advance(steps, error=error)
+                        continue
+                    self.runtime.check_deadline(machine.deadline)
+                    step = advance(steps, response)
+                elif isinstance(step, CompactionRequest):
+                    try:
+                        data = await self._await_io(
+                            lambda: self.runtime.llm.ainvoke(step.messages, **step.options()), machine.deadline)
+                        self.runtime.check_deadline(machine.deadline)
+                        response = self._summary_response(data)
+                    except Exception as error:
+                        step = advance(steps, error=error)
+                    else:
+                        step = advance(steps, response)
+                elif isinstance(step, ContextIORequest):
+                    operation = step.operation
+                    try:
+                        result = await self._await_io(lambda: asyncio.to_thread(operation), machine.deadline)
+                    except Exception as error:
+                        step = advance(steps, error=error)
+                    else:
+                        step = advance(steps, result)
+                elif isinstance(step, ToolRequest):
+                    # Synchronous handlers run serially on this thread;
+                    # moving them to a worker would change effect ordering.
+                    self.runtime.check_deadline(machine.deadline)
+                    result = self.runtime.execute_tool_calls([step.call])[0]
+                    step = advance(steps, result)
+        yield deepcopy(machine.end_event())
 
-            ai = AI(
-                message="".join(content_parts),
-                reasoning="".join(reasoning_parts),
-                tool_calls=final_tool_calls,
-            )
-            if not final_tool_calls:
-                self.runtime.add_session_message(ai)
-                return
+    def _summary_response(self, data):
+        self.runtime.context_manager.observe_usage(data.get('usage') if isinstance(data, dict) else None,
+                                                  phase='summary')
+        response, _ = self.runtime.parse_invoke_response(data)
+        if data['choices'][0].get('finish_reason') not in ('stop', 'end_turn'):
+            raise CompactionError('Summary response has no successful completion signal')
+        return response
 
-            self._record_tool_round(ai, final_tool_calls, deadline)
-            if self.runtime.should_stop_after_tool_calls(final_tool_calls):
-                return
-            messages = self._refresh_messages()
-        return
+    @contextmanager
+    def _execution(self) -> Iterator[AgentTurnMachine]:
+        machine = AgentTurnMachine(self.runtime, None)
+        self.runtime.enter_run()
+        try:
+            self.runtime.run_state.check_stop()
+            machine.deadline = self.runtime.deadline()
+            yield machine
+        except GeneratorExit:
+            machine.status = "closed"
+            raise
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            machine.status = "cancelled"
+            raise
+        except BaseException as error:
+            machine.status = "timeout" if isinstance(error, AgentTimeoutError) else "error"
+            machine.error = f"{type(error).__name__}: {error}"
+            raise
+        finally:
+            try:
+                for event in machine.interrupt_pending_calls():
+                    self.runtime.publish(event)
+                terminal = machine.end_event()
+                self.runtime.run_state.capture_terminal(terminal)
+                self.runtime.publish(terminal)
+            finally:
+                self.runtime.exit_run()
 
-    def _record_tool_round(
-        self,
-        ai: AI,
-        tool_calls: list[ToolCall],
-        deadline: float | None,
-    ) -> None:
-        self.runtime.add_session_message(ai)
-        tool_results = self.runtime.execute_tool_calls(tool_calls)
+    def _deliver(self, event: AgentEvent) -> AgentEvent:
+        self.runtime.publish(event)
+        return deepcopy(event)
+
+    async def _await_io(self, operation: Callable[[], Awaitable[T]], deadline: float | None) -> T:
+        # Create the awaitable only after checking the deadline, avoiding leaked
+        # coroutines when request preparation already exhausted the time budget.
         self.runtime.check_deadline(deadline)
-        for result in tool_results:
-            self.runtime.add_session_message(result)
+        try:
+            return await await_before(operation, deadline, cleanup_grace=STREAM_CLEANUP_TIMEOUT)
+        except DeadlineExceeded:
+            self.runtime.check_deadline(deadline)
+            raise
 
-    def _refresh_messages(self):
-        self.runtime.prune_active()
-        return self.runtime.active_messages()
 
-    def _record_fallback(self) -> str:
-        fallback = AI(message=FALLBACK_MESSAGE)
-        self.runtime.add_session_message(fallback)
-        return fallback.message
+@contextmanager
+def _close_sync_stream(source: Iterator[Chunk]):
+    interrupted = False
+    try:
+        yield source
+    except BaseException:
+        interrupted = True
+        raise
+    finally:
+        close = getattr(source, "close", None)
+        if close is not None:
+            try:
+                close()
+            except Exception:
+                if not interrupted:
+                    raise
+                logging.getLogger(__name__).exception("Agent stream cleanup failed")
+
+
+@asynccontextmanager
+async def _close_async_stream(source: AsyncIterator[Chunk]):
+    interrupted = False
+    try:
+        yield source
+    except BaseException:
+        interrupted = True
+        raise
+    finally:
+        close = getattr(source, "aclose", None)
+        if close is not None:
+            try:
+                await await_before(close, time.monotonic() + STREAM_CLEANUP_TIMEOUT)
+            except Exception:
+                if not interrupted:
+                    raise
+                # Preserve the original timeout/cancellation/close and release
+                # the guard even when cooperative provider cleanup is faulty.
+                logging.getLogger(__name__).exception("Agent stream cleanup failed")

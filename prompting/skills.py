@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
+from stat import S_ISDIR
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,21 +27,33 @@ def load_skills_from_dir(
     """Load all ``SKILL.md`` summaries from one skills directory."""
     root = Path(skills_dir)
     errors: list[str] = []
-    if not root.exists():
+    try:
+        os.stat(root)
+        skill_dirs = sorted(root.iterdir())
+    except FileNotFoundError:
         return LoadedSkills([], [], errors, False)
+    except OSError as exc:
+        error = f"{root}: {type(exc).__name__}: {exc}"
+        errors.append(error)
+        if logger is not None:
+            logger.warning("skill_load_failed %s", error)
+        return LoadedSkills([], [], errors, True)
 
     skills: list[dict[str, str]] = []
     loaded: list[str] = []
-    for skill_dir in sorted(root.iterdir()):
-        if not skill_dir.is_dir():
-            continue
-        skill_file = skill_dir / "SKILL.md"
-        if not skill_file.exists():
-            continue
+    for skill_dir in skill_dirs:
+        error_path = skill_dir
         try:
+            if not S_ISDIR(os.stat(skill_dir).st_mode):
+                continue
+            skill_file = skill_dir / "SKILL.md"
+            error_path = skill_file
+            os.stat(skill_file)
             text = skill_file.read_text(encoding="utf-8")
-        except OSError as exc:
-            error = f"{skill_file}: {type(exc).__name__}: {exc}"
+        except FileNotFoundError:
+            continue
+        except (OSError, UnicodeDecodeError) as exc:
+            error = f"{error_path}: {type(exc).__name__}: {exc}"
             errors.append(error)
             if logger is not None:
                 logger.warning("skill_load_failed %s", error)
@@ -114,7 +128,7 @@ def render_skills(skills: list[dict[str, str]]) -> str:
     ]
     for skill in skills:
         desc = skill.get("description", "")
-        desc_short = desc.split("。", 1)[0].split(". ", 1)[0].strip()
+        desc_short = desc.split("\u3002", 1)[0].split(". ", 1)[0].strip()
         if not desc_short:
             desc_short = "no summary"
         path = skill.get("path", "")

@@ -116,6 +116,10 @@ class ToolPermissionPolicy:
         arguments: object = None,
     ) -> ToolPermissionDecision:
         mode = self.rules.get(permission.side_effect, "allow")
+        # A category-wide allow does not waive a tool's explicit requirement.
+        # Deny still wins; without enforcement these remain audit decisions.
+        if permission.requires_approval and mode != "deny":
+            mode = "approval"
         if mode == "approval":
             return ToolPermissionDecision(
                 allowed=not self.enforce,

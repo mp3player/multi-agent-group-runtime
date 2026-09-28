@@ -1,7 +1,13 @@
 """Runtime helpers for OpenAI-compatible LLM clients."""
 
 from core.llm_runtime.config import get_config, load_env
-from core.llm_runtime.errors import LLMError, RateLimitError, ServerError, raise_for_status
+from core.llm_runtime.errors import (
+    ContextWindowExceeded,
+    LLMError,
+    RateLimitError,
+    ServerError,
+    raise_for_status,
+)
 from core.llm_runtime.payload import to_dict_list
 from core.llm_runtime.sse import (
     ToolCallAccumulator,
@@ -13,6 +19,7 @@ from core.llm_runtime.sse import (
 
 __all__ = [
     "LLMError",
+    "ContextWindowExceeded",
     "RateLimitError",
     "ServerError",
     "ToolCallAccumulator",

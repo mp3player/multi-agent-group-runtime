@@ -1,53 +1,26 @@
-"""Prompt architecture declarations used by ``SystemBuilder``."""
+"""Public single-agent APIs, loaded on explicit access."""
 
-from prompting.loader import (
-    load_common_prompt_specs,
-    resolve_prompt_spec_path,
-)
-from prompting.renderer import render_group_chat_prompt
-from prompting.runtime import (
-    PromptEnvironment,
-    PromptModuleStore,
-    PromptRuntime,
-    PromptRuntimeError,
-    PromptState,
-)
-from prompting.skills import (
-    LoadedSkills,
-    load_skills_from_dir,
-    parse_skill_frontmatter,
-    render_skills,
-)
-from prompting.specs import (
-    COMMON_PROMPT_MODULES,
-    DISPATCH_POLICY_HINTS,
-    GROUP_PROMPT_MODULES,
-    GROUP_TOOL_PROMPT_ENTRIES,
-    DispatchPolicyPromptHint,
-    GroupToolPromptEntry,
-    PromptModuleSpec,
-)
-from prompting.tool_renderer import render_tool_registry
+from importlib import import_module
 
-__all__ = [
-    "COMMON_PROMPT_MODULES",
-    "DISPATCH_POLICY_HINTS",
-    "GROUP_PROMPT_MODULES",
-    "GROUP_TOOL_PROMPT_ENTRIES",
-    "DispatchPolicyPromptHint",
-    "GroupToolPromptEntry",
-    "PromptModuleSpec",
-    "PromptEnvironment",
-    "PromptModuleStore",
-    "PromptRuntime",
-    "PromptRuntimeError",
-    "PromptState",
-    "LoadedSkills",
-    "load_common_prompt_specs",
-    "load_skills_from_dir",
-    "parse_skill_frontmatter",
-    "render_group_chat_prompt",
-    "render_skills",
-    "render_tool_registry",
-    "resolve_prompt_spec_path",
-]
+_EXPORTS = {
+    'load_common_prompt_specs': ('prompting.loader', 'load_common_prompt_specs'),
+    'resolve_prompt_spec_path': ('prompting.loader', 'resolve_prompt_spec_path'),
+    'PromptRuntime': ('prompting.runtime', 'PromptRuntime'),
+    'PromptRuntimeError': ('prompting.runtime', 'PromptRuntimeError'),
+    'LoadedSkills': ('prompting.skills', 'LoadedSkills'),
+    'load_skills_from_dir': ('prompting.skills', 'load_skills_from_dir'),
+    'parse_skill_frontmatter': ('prompting.skills', 'parse_skill_frontmatter'),
+    'render_skills': ('prompting.skills', 'render_skills'),
+    'COMMON_PROMPT_MODULES': ('prompting.specs', 'COMMON_PROMPT_MODULES'),
+    'PromptModuleSpec': ('prompting.specs', 'PromptModuleSpec'),
+    'render_tool_registry': ('prompting.tool_renderer', 'render_tool_registry'),
+}
+__all__ = list(_EXPORTS)
+
+def __getattr__(name):
+    if name not in _EXPORTS:
+        raise AttributeError(name)
+    module, attribute = _EXPORTS[name]
+    value = getattr(import_module(module), attribute)
+    globals()[name] = value
+    return value

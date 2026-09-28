@@ -1,0 +1,1144 @@
+{
+  "date": "2026-09-28",
+  "production_changed": false,
+  "accepted_policy": "Untargeted user requests go to the first idle member; peers control further requests.",
+  "cli_complex": {
+    "duration_seconds": 520.5516821199562,
+    "returncode": 0,
+    "timed_out": false,
+    "provider_requests": 57,
+    "member_runs": 38,
+    "public_messages": 76,
+    "process_metrics": {
+      "rss_kib": {
+        "first": 0,
+        "last": 50524,
+        "peak": 50524
+      },
+      "threads": {
+        "first": 1,
+        "last": 1,
+        "peak": 5
+      },
+      "fds": {
+        "first": 3,
+        "last": 4,
+        "peak": 13
+      }
+    },
+    "invocations": [
+      {
+        "id": "chat-7983978c6b164fda94793a65e52cc3de",
+        "state": "terminal",
+        "reason": "completed",
+        "policy_state": "{}"
+      },
+      {
+        "id": "chat-97cc499b090941d4a360b3c58abbe476",
+        "state": "terminal",
+        "reason": "completed",
+        "policy_state": "{}"
+      },
+      {
+        "id": "chat-bcc30fd7dd804d50801ba7110236db27",
+        "state": "terminal",
+        "reason": "completed",
+        "policy_state": "{}"
+      },
+      {
+        "id": "chat-a785f188d2eb4e8eafd464f55ec22683",
+        "state": "terminal",
+        "reason": "completed",
+        "policy_state": "{}"
+      },
+      {
+        "id": "chat-82221cd027e54f60a90bd768b5615702",
+        "state": "terminal",
+        "reason": "completed",
+        "policy_state": "{}"
+      },
+      {
+        "id": "chat-87026a73556d49ba8f1123cbdbe4813b",
+        "state": "terminal",
+        "reason": "completed",
+        "policy_state": "{}"
+      },
+      {
+        "id": "chat-fd38d1327ed7473884ae467de75381ed",
+        "state": "terminal",
+        "reason": "completed",
+        "policy_state": "{}"
+      }
+    ],
+    "structural_pass": true,
+    "pending_after_close": 0,
+    "unsettled_after_close": 0,
+    "passive_opportunities": 0,
+    "phases": [
+      {
+        "case_id": "ROL-1",
+        "revision": 1,
+        "recall": false,
+        "expected": {
+          "kind": "rollout_final",
+          "case_id": "ROL-1",
+          "revision": 1,
+          "plan": "delta",
+          "cost": 11
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "ROL-1",
+        "revision": 2,
+        "recall": false,
+        "expected": {
+          "kind": "rollout_final",
+          "case_id": "ROL-1",
+          "revision": 2,
+          "plan": "cirrus",
+          "cost": 8
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "INC-1",
+        "revision": 1,
+        "recall": false,
+        "expected": {
+          "kind": "timeline_final",
+          "case_id": "INC-1",
+          "revision": 1,
+          "events": [
+            {
+              "id": "E1",
+              "utc": 1000
+            },
+            {
+              "id": "E2",
+              "utc": 1015
+            },
+            {
+              "id": "E3",
+              "utc": 1015
+            },
+            {
+              "id": "E4",
+              "utc": 1030
+            },
+            {
+              "id": "E5",
+              "utc": 1035
+            },
+            {
+              "id": "E6",
+              "utc": 1040
+            },
+            {
+              "id": "E7",
+              "utc": 1050
+            },
+            {
+              "id": "E8",
+              "utc": 1055
+            }
+          ]
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "INC-1",
+        "revision": 2,
+        "recall": false,
+        "expected": {
+          "kind": "timeline_final",
+          "case_id": "INC-1",
+          "revision": 2,
+          "events": [
+            {
+              "id": "E2",
+              "utc": 997
+            },
+            {
+              "id": "E1",
+              "utc": 1000
+            },
+            {
+              "id": "E3",
+              "utc": 1015
+            },
+            {
+              "id": "E4",
+              "utc": 1030
+            },
+            {
+              "id": "E7",
+              "utc": 1032
+            },
+            {
+              "id": "E5",
+              "utc": 1035
+            },
+            {
+              "id": "E6",
+              "utc": 1040
+            },
+            {
+              "id": "E8",
+              "utc": 1055
+            }
+          ]
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "SCH-1",
+        "revision": 1,
+        "recall": false,
+        "expected": {
+          "kind": "schedule_final",
+          "case_id": "SCH-1",
+          "revision": 1,
+          "starts": {
+            "A": 0,
+            "B": 0,
+            "C": 3,
+            "D": 3,
+            "F": 7,
+            "E": 8
+          },
+          "makespan": 10
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "SCH-1",
+        "revision": 2,
+        "recall": false,
+        "expected": {
+          "kind": "schedule_final",
+          "case_id": "SCH-1",
+          "revision": 2,
+          "starts": {
+            "A": 0,
+            "B": 0,
+            "C": 3,
+            "D": 3,
+            "F": 6,
+            "E": 7
+          },
+          "makespan": 9
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "ROL-2",
+        "revision": 1,
+        "recall": false,
+        "expected": {
+          "kind": "rollout_final",
+          "case_id": "ROL-2",
+          "revision": 1,
+          "plan": "delta",
+          "cost": 14
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "ROL-2",
+        "revision": 2,
+        "recall": false,
+        "expected": {
+          "kind": "rollout_final",
+          "case_id": "ROL-2",
+          "revision": 2,
+          "plan": "cirrus",
+          "cost": 11
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "INC-2",
+        "revision": 1,
+        "recall": false,
+        "expected": {
+          "kind": "timeline_final",
+          "case_id": "INC-2",
+          "revision": 1,
+          "events": [
+            {
+              "id": "E1",
+              "utc": 1100
+            },
+            {
+              "id": "E2",
+              "utc": 1115
+            },
+            {
+              "id": "E3",
+              "utc": 1115
+            },
+            {
+              "id": "E4",
+              "utc": 1130
+            },
+            {
+              "id": "E5",
+              "utc": 1135
+            },
+            {
+              "id": "E6",
+              "utc": 1140
+            },
+            {
+              "id": "E7",
+              "utc": 1150
+            },
+            {
+              "id": "E8",
+              "utc": 1155
+            }
+          ]
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "INC-2",
+        "revision": 2,
+        "recall": false,
+        "expected": {
+          "kind": "timeline_final",
+          "case_id": "INC-2",
+          "revision": 2,
+          "events": [
+            {
+              "id": "E2",
+              "utc": 1097
+            },
+            {
+              "id": "E1",
+              "utc": 1100
+            },
+            {
+              "id": "E3",
+              "utc": 1115
+            },
+            {
+              "id": "E4",
+              "utc": 1130
+            },
+            {
+              "id": "E7",
+              "utc": 1132
+            },
+            {
+              "id": "E5",
+              "utc": 1135
+            },
+            {
+              "id": "E6",
+              "utc": 1140
+            },
+            {
+              "id": "E8",
+              "utc": 1155
+            }
+          ]
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "SCH-2",
+        "revision": 1,
+        "recall": false,
+        "expected": {
+          "kind": "schedule_final",
+          "case_id": "SCH-2",
+          "revision": 1,
+          "starts": {
+            "A": 0,
+            "B": 0,
+            "C": 3,
+            "D": 3,
+            "F": 7,
+            "E": 8
+          },
+          "makespan": 10
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 6,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "SCH-2",
+        "revision": 2,
+        "recall": false,
+        "expected": {
+          "kind": "schedule_final",
+          "case_id": "SCH-2",
+          "revision": 2,
+          "starts": {
+            "A": 0,
+            "B": 0,
+            "C": 3,
+            "D": 3,
+            "F": 6,
+            "E": 7
+          },
+          "makespan": 9
+        },
+        "artifacts": [],
+        "semantic_errors": [
+          "No final artifact"
+        ],
+        "participants": [
+          "alice",
+          "bob",
+          "carol"
+        ],
+        "member_runs": 3,
+        "public_messages": 5,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": false,
+        "data_availability": [],
+        "independent_recall": null,
+        "semantic_pass": false,
+        "protocol_pass": true,
+        "participation_pass": false
+      },
+      {
+        "case_id": "ROL-1",
+        "revision": 2,
+        "recall": true,
+        "expected": {
+          "kind": "rollout_final",
+          "case_id": "ROL-1",
+          "revision": 2,
+          "plan": "cirrus",
+          "cost": 8
+        },
+        "artifacts": [
+          {
+            "kind": "rollout_final",
+            "case_id": "ROL-1",
+            "revision": 2,
+            "plan": "cirrus",
+            "cost": 8
+          }
+        ],
+        "semantic_errors": [],
+        "participants": [
+          "carol"
+        ],
+        "member_runs": 1,
+        "public_messages": 2,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": true,
+        "data_availability": [
+          {
+            "final_id": "1b4adb4c7bf946798fb4c266a8181ab9",
+            "high_water": 73,
+            "prior_peer_messages": []
+          }
+        ],
+        "independent_recall": true,
+        "semantic_pass": true,
+        "protocol_pass": true,
+        "participation_pass": true
+      },
+      {
+        "case_id": "INC-1",
+        "revision": 2,
+        "recall": true,
+        "expected": {
+          "kind": "timeline_final",
+          "case_id": "INC-1",
+          "revision": 2,
+          "events": [
+            {
+              "id": "E2",
+              "utc": 997
+            },
+            {
+              "id": "E1",
+              "utc": 1000
+            },
+            {
+              "id": "E3",
+              "utc": 1015
+            },
+            {
+              "id": "E4",
+              "utc": 1030
+            },
+            {
+              "id": "E7",
+              "utc": 1032
+            },
+            {
+              "id": "E5",
+              "utc": 1035
+            },
+            {
+              "id": "E6",
+              "utc": 1040
+            },
+            {
+              "id": "E8",
+              "utc": 1055
+            }
+          ]
+        },
+        "artifacts": [
+          {
+            "kind": "timeline_final",
+            "case_id": "INC-1",
+            "revision": 2,
+            "events": [
+              {
+                "id": "E2",
+                "utc": 997
+              },
+              {
+                "id": "E1",
+                "utc": 1000
+              },
+              {
+                "id": "E3",
+                "utc": 1015
+              },
+              {
+                "id": "E4",
+                "utc": 1030
+              },
+              {
+                "id": "E7",
+                "utc": 1032
+              },
+              {
+                "id": "E5",
+                "utc": 1035
+              },
+              {
+                "id": "E6",
+                "utc": 1040
+              },
+              {
+                "id": "E8",
+                "utc": 1055
+              }
+            ]
+          }
+        ],
+        "semantic_errors": [],
+        "participants": [
+          "bob"
+        ],
+        "member_runs": 1,
+        "public_messages": 2,
+        "missing_responses": [],
+        "unassigned_opportunities": [],
+        "all_runs_settled": true,
+        "run_errors": [],
+        "final_after_peer_messages": true,
+        "data_availability": [
+          {
+            "final_id": "958691ba04dd4418af1609472b00922f",
+            "high_water": 75,
+            "prior_peer_messages": []
+          }
+        ],
+        "independent_recall": true,
+        "semantic_pass": true,
+        "protocol_pass": true,
+        "participation_pass": true
+      }
+    ],
+    "analysis_revision": "v2: distinguish peer participation, independent recall, data availability, and malformed final attempts; task prompts unchanged",
+    "archives": [
+      {
+        "session_id": "54d9b7c65c54490686662f0f76515bc1",
+        "path": "/home/coder/.local/state/mas/context/54d9b7c65c54490686662f0f76515bc1/08601985bfca479b83f3c7037d5d14ab.json",
+        "reason": "budget",
+        "entries": 149
+      },
+      {
+        "session_id": "011597667e064a07a1e971dadf562c32",
+        "path": "/home/coder/.local/state/mas/context/011597667e064a07a1e971dadf562c32/5ce5505930c24534b9c780e2b15cb5e4.json",
+        "reason": "budget",
+        "entries": 139
+      },
+      {
+        "session_id": "011597667e064a07a1e971dadf562c32",
+        "path": "/home/coder/.local/state/mas/context/011597667e064a07a1e971dadf562c32/7868da179e204f6793dc34cb375f4500.json",
+        "reason": "budget",
+        "entries": 148
+      },
+      {
+        "session_id": "37a76a053ba7489daeb44f297cb59260",
+        "path": "/home/coder/.local/state/mas/context/37a76a053ba7489daeb44f297cb59260/ee910f10deeb4bd287ce3f964431065d.json",
+        "reason": "budget",
+        "entries": 138
+      },
+      {
+        "session_id": "37a76a053ba7489daeb44f297cb59260",
+        "path": "/home/coder/.local/state/mas/context/37a76a053ba7489daeb44f297cb59260/4a7353f8d20443a1b6f7fc450004e67c.json",
+        "reason": "budget",
+        "entries": 149
+      }
+    ]
+  },
+  "natural_handoffs": {
+    "user_messages": 8,
+    "member_runs": 12,
+    "missing_responses": [
+      {
+        "member": "bob",
+        "expected_reply_to": "a51c16bec0dc40dd86ef94afdae94047",
+        "request_content": "The user is calling for you. Please respond.",
+        "actual": [
+          {
+            "content": "I'm here! What's up?",
+            "reply_to": "30385a86057c4384af2d929544b3494b",
+            "actual_target_content": "bob?"
+          }
+        ]
+      },
+      {
+        "member": "carol",
+        "expected_reply_to": "92606f7245874d4bab4d72dc93004a8f",
+        "request_content": "The user is calling for you. Please respond.",
+        "actual": [
+          {
+            "content": "I'm here too! What can I do for you?",
+            "reply_to": "fafcdac0134248e89758ece2f75db886",
+            "actual_target_content": "carol ?"
+          }
+        ]
+      },
+      {
+        "member": "bob",
+        "expected_reply_to": "539cec270b8e448dbf28ce4a2327ab91",
+        "request_content": "The user is calling for you. Please respond.",
+        "actual": [
+          {
+            "content": "Yes, I'm here! How can I help you?",
+            "reply_to": "d7daf5479a584bccb4e76c08e4ca495a",
+            "actual_target_content": "bob?"
+          }
+        ]
+      },
+      {
+        "member": "carol",
+        "expected_reply_to": "3de87d37f0d5434c965a2702b663cef7",
+        "request_content": "The user is calling for you. Please respond.",
+        "actual": [
+          {
+            "content": "Yes, I'm here! How can I help you?",
+            "reply_to": "af9ff134d32e41efaf851b7f8ad4eaa5",
+            "actual_target_content": "carol ?"
+          }
+        ]
+      }
+    ],
+    "unsettled": 0,
+    "pending": 0,
+    "provider_requests": 15,
+    "evidence": "/tmp/mas-group-natural-20260928-v1.sqlite"
+  },
+  "explicit_protocol_controls": [
+    {
+      "name": "test_migration_synthesis_prese0",
+      "passed": true,
+      "member_runs": 4,
+      "model_calls": {
+        "integrator": 21,
+        "producer": 3,
+        "consumer": 2
+      },
+      "compactions": {
+        "integrator": 15,
+        "producer": 0,
+        "consumer": 0
+      },
+      "evidence_reads": [
+        "producer",
+        "consumer"
+      ],
+      "evidence": "/tmp/mas-group-endurance-controls-20260928-v1/test_migration_synthesis_prese0/case-result.json"
+    },
+    {
+      "name": "test_optimizer_revises_after_i0",
+      "passed": true,
+      "member_runs": 7,
+      "model_calls": {
+        "planner": 7,
+        "capacity": 2,
+        "auditor": 6
+      },
+      "compactions": {
+        "planner": 0,
+        "capacity": 0,
+        "auditor": 0
+      },
+      "evidence_reads": [
+        "planner",
+        "capacity",
+        "auditor",
+        "auditor"
+      ],
+      "evidence": "/tmp/mas-group-endurance-controls-20260928-v1/test_optimizer_revises_after_i0/case-result.json"
+    },
+    {
+      "name": "test_parallel_incident_investi0",
+      "passed": true,
+      "member_runs": 5,
+      "model_calls": {
+        "investigator": 3,
+        "workers": 3,
+        "ledger": 3,
+        "deployment": 3
+      },
+      "compactions": {
+        "investigator": 0,
+        "workers": 0,
+        "ledger": 0,
+        "deployment": 0
+      },
+      "evidence_reads": [
+        "workers",
+        "deployment",
+        "ledger"
+      ],
+      "evidence": "/tmp/mas-group-endurance-controls-20260928-v1/test_parallel_incident_investi0/case-result.json"
+    }
+  ],
+  "deterministic_endurance": {
+    "test_file": "tests/test_group_endurance_boundaries.py",
+    "scope": "Only the new test file was edited; no production or environment changes and no model API calls.",
+    "existing_tests": {
+      "command": "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -p pytest_asyncio.plugin -q tests/test_group_driver_lifecycle.py tests/test_group_reception_lifecycle.py tests/test_group_integration.py tests/test_group_boundaries.py tests/test_group_recovery.py --durations=5",
+      "passed": 40,
+      "pytest_seconds": 2.75
+    },
+    "initial_fixture_correction": "Scripted compaction responses require finish_reason=stop; the test provider now sets it explicitly.",
+    "smaller_context_observation": {
+      "context_window": 32768,
+      "max_tokens": 512,
+      "drain_guard_seconds": 10,
+      "timeout_discussion_index": 21,
+      "pytest_seconds": 63.09,
+      "snapshot_after_test_cleanup": "discussion-21 bob merge cancelled by test cleanup; no earlier Group error",
+      "archives": {
+        "alice": 17,
+        "bob": 17,
+        "carol": 16
+      },
+      "context_applications": 619,
+      "investigated_path": "MemberContext scans all historical sources during preparation and admission; each archived context_batch_covered validates the complete archive chain.",
+      "qualification": "This demonstrates a finite test timeout and preparation scaling cost, not a proven scheduling correctness bug or a production deadline failure."
+    },
+    "test_environment": "Disabled unrelated global pytest plugin autoload because ROS launch_testing failed to import yaml.",
+    "normal_context_run": {
+      "context_window": 131072,
+      "passed": 1,
+      "pytest_seconds": 243.78,
+      "test_seconds": 243.71,
+      "outer_guard_seconds": 35,
+      "runtime_deadline_seconds": 30,
+      "metrics": {
+        "admitted_assignments": 176,
+        "business_calls": {
+          "alice": 72,
+          "bob": 68,
+          "carol": 32
+        },
+        "compactions": {
+          "alice": 7,
+          "bob": 7,
+          "carol": 6
+        },
+        "discussion_seconds": [
+          0.251182,
+          0.467413,
+          0.091607,
+          1.285946,
+          1.186479,
+          0.69459,
+          2.253813,
+          2.628443,
+          2.901835,
+          3.759401,
+          4.951977,
+          3.677123,
+          1.836846,
+          3.419524,
+          3.764015,
+          2.450794,
+          5.740814,
+          4.802292,
+          5.247258,
+          6.480781,
+          4.724931,
+          8.461042,
+          2.427042,
+          7.510444,
+          7.267604,
+          3.204313,
+          7.450369,
+          7.908934,
+          11.659154,
+          14.948106,
+          9.767893,
+          9.3734,
+          1.139455,
+          14.591716,
+          8.84017,
+          6.065156,
+          11.673951,
+          17.492918,
+          15.486629,
+          15.802925
+        ],
+        "discussions": {
+          "cancel": 4,
+          "fail": 4,
+          "start": 32
+        },
+        "peak_provider_calls": 2,
+        "summary_calls": {
+          "alice": 7,
+          "bob": 7,
+          "carol": 6
+        }
+      }
+    },
+    "compatibility_check": "Python3.10 grammar plus final wait helper readiness and cancellation checks passed independently after changing asyncio.timeout to asyncio.wait_for during the running endurance test.",
+    "run_command": "MAS_RUN_GROUP_ENDURANCE_TESTS=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest -p pytest_asyncio.plugin -q tests/test_group_endurance_boundaries.py --durations=1 --junitxml=/tmp/group-endurance-boundaries.xml -o junit_family=xunit1",
+    "final_checks": {
+      "default_run": "1 skipped in 0.06s",
+      "opt_in_collection": "1 test collected in 0.05s",
+      "combined_lifecycle_selection": "40 passed, 1 skipped in 4.97s",
+      "final_helper_checks": "Opt-in skip condition false; Python3.10 grammar; readiness and cancellation passed."
+    },
+    "profile": {
+      "path": "/tmp/group-endurance-32k-profile.json",
+      "discussions": 18,
+      "business_calls": 90,
+      "seconds": 63.846596196061,
+      "first_discussion_seconds": 0.18185594910755754,
+      "last_discussion_seconds": 9.67151947086677,
+      "summary_bytes": 105,
+      "summary_calls": 46,
+      "worker_sample_paths": {
+        "idle": 228,
+        "store_wait": 131,
+        "other": 17,
+        "coverage": 5
+      },
+      "cold_hot_scope": "Only the application metadata cache was cleared; filesystem page cache was not flushed.",
+      "coverage_benchmarks": [
+        {
+          "discussion": 5,
+          "context_batches": 61,
+          "archive_files": 4,
+          "samples": {
+            "cold": {
+              "seconds": 0.006068360060453415,
+              "metadata_calls": 12,
+              "loads": 4
+            },
+            "hot": {
+              "seconds": 0.00019663991406559944,
+              "metadata_calls": 12,
+              "loads": 0
+            }
+          }
+        },
+        {
+          "discussion": 11,
+          "context_batches": 127,
+          "archive_files": 10,
+          "samples": {
+            "cold": {
+              "seconds": 0.014970475109294057,
+              "metadata_calls": 30,
+              "loads": 10
+            },
+            "hot": {
+              "seconds": 0.0003607140388339758,
+              "metadata_calls": 30,
+              "loads": 0
+            }
+          }
+        },
+        {
+          "discussion": 17,
+          "context_batches": 193,
+          "archive_files": 16,
+          "samples": {
+            "cold": {
+              "seconds": 0.03066723793745041,
+              "metadata_calls": 48,
+              "loads": 16
+            },
+            "hot": {
+              "seconds": 0.0005770190618932247,
+              "metadata_calls": 48,
+              "loads": 0
+            }
+          }
+        }
+      ]
+    },
+    "performance_interpretation": "Per-assignment complete source scans and per-source archive ancestry validation cause work to grow with historical source count times archive count. Source-by-source store round trips dominate observed non-idle worker samples. Archive metadata revalidation contributes but does not explain all wall time. No Group runtime deadline or scheduling correctness failure was reproduced in the successful finite runs.",
+    "profile_reproduction": "Use EnduranceModel from the new test with three Agents, AgentOptions(context_window=32768,max_tokens=512), per-member FileContextArchive and OnDemandStrategy; GroupLimits(max_active=2,max_queued=2,max_pending=4,max_runs=5,page_size=2,invocation_timeout=30). Reuse the Agents for18 normal start discussions with the same passive before/after posts as the test, drive and finish each. At discussion indices5,11,17, call context_batch_covered on the earliest context operation in Alice session once with the private archive metadata cache cleared and again warm; cProfile20 further warm calls. Complete JSON includes Python-level worker stack samples every0.5s and cumulative coverage/validation method timings.",
+    "profiling_instrumentation_issue": "An initial faulthandler periodic dump process segfaulted under Python3.14.0rc2 during its first dump. Retried successfully with Python-level sys._current_frames sampling; no Group code changed.",
+    "limitations": [
+      "Deterministic provider responses, no network/provider socket cleanup coverage.",
+      "Fixed105-byte summaries exercise compaction mechanics, not semantic summary quality.",
+      "Finite repetitions and resource ownership assertions do not prove an unbounded-duration memory bound.",
+      "Capacity and cancellation paths are exercised, but not every possible store/disk/provider failure."
+    ]
+  },
+  "offline_regression": "1175 passed, 14 skipped in 46.15s",
+  "qualitative_audit": {
+    "peer_calculations_correct": 12,
+    "peer_reviews_substantive": 12,
+    "alice_continuations_after_peer_reports": 0,
+    "final_alice_artifacts": 0,
+    "source_coverage_verified_in_all_carol_assignments": true,
+    "model_reasoning_defects": [
+      "Both schedule revision-2 reviews incorrectly identify a seven-unit chain as critical when an eight-unit dependency chain exists.",
+      "Schedule optimality explanations assume the proposed machine order instead of excluding alternative orders; independent enumeration confirms the selected objectives."
+    ],
+    "review_message_ids": [
+      "5c3a7696792c4242901fa4fea9954a15",
+      "46d1c6df223a41bdbec5e89e30276b85"
+    ]
+  }
+}

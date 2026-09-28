@@ -14,6 +14,7 @@ from tools.permissions import (
     ToolPermissionPolicy,
 )
 from tools.registry import ToolCallError, ToolRegistry
+from tools.results import ToolFailure
 from tools.runtime import ToolRuntime
 from tools.builtin import terminal
 from tools.file_ops import read_file, write_file, str_replace, list_dir
@@ -23,6 +24,7 @@ __all__ = [
     "ToolFunction",
     "ToolRegistry",
     "ToolCallError",
+    "ToolFailure",
     "ToolRuntime",
     "ToolPermission",
     "ToolPermissionDecision",

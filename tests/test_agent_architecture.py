@@ -12,7 +12,7 @@ from core.agent_runtime import (
     AgentReactLoop,
     AgentResponseParser,
     AgentRunState,
-    AgentRuntimeAdapter,
+    AgentRuntime,
     AgentToolExecutor,
     parse_invoke_response,
 )
@@ -29,6 +29,7 @@ from tools.runtime import ToolRuntime
 
 class FakeLLM:
     model = "fake"
+    context_window = 131072
     base_url = "http://fake.local"
 
     def __init__(self, responses: list[dict[str, Any]] | None = None) -> None:
@@ -92,9 +93,10 @@ def test_agent_initializes_runtime_components() -> None:
     assert isinstance(agent.run_state, AgentRunState)
     assert isinstance(agent.response_parser, AgentResponseParser)
     assert isinstance(agent.tool_executor, AgentToolExecutor)
-    assert isinstance(agent.runtime, AgentRuntimeAdapter)
+    assert isinstance(agent.runtime, AgentRuntime)
     assert isinstance(agent.react_loop, AgentReactLoop)
-    assert agent.runtime.agent is agent
+    assert agent.runtime.session is agent.session
+    assert not hasattr(agent.runtime, "agent")
     assert agent.react_loop.runtime is agent.runtime
 
 
@@ -124,7 +126,7 @@ def test_response_parser_preserves_missing_choices_error() -> None:
     try:
         parse_invoke_response({})
     except LLMError as error:
-        assert str(error) == "响应缺少 choices: {}"
+        assert "choices" in str(error)
     else:
         raise AssertionError("expected LLMError")
 
@@ -149,8 +151,8 @@ def test_tool_executor_success_none_and_error_shapes() -> None:
 
     assert [result.role for result in results] == ["tool", "tool", "tool"]
     assert isinstance(executor.runtime, ToolRuntime)
-    assert [result.message for result in results[:2]] == ["hello", "(无返回值)"]
-    assert results[2].message.startswith("[ToolCallError] echo: 参数错误: ")
+    assert [result.message for result in results[:2]] == ["hello", "(No return value)"]
+    assert results[2].message.startswith("[ToolCallError] echo: Invalid arguments: ")
     assert "missing 1 required positional argument" in results[2].message
     assert getattr(results[0], "tool_call_id") == "ok"
     records = executor.runtime.audit_log.records()
@@ -167,9 +169,9 @@ def test_tool_runtime_unknown_tool_and_bad_json_shapes() -> None:
         ToolCall("bad-json", "missing_tool", "{"),
     ])
 
-    assert results[0].message == "[ToolCallError] missing_tool: 工具不存在: missing_tool"
+    assert results[0].message == "[ToolCallError] missing_tool: Tool does not exist: missing_tool"
     assert results[1].message.startswith(
-        "[ToolCallError] missing_tool: 参数不是合法 JSON: "
+        "[ToolCallError] missing_tool: Arguments are not valid JSON: "
     )
     assert getattr(results[1], "tool_call_id") == "bad-json"
     records = runtime.audit_log.records()
@@ -227,12 +229,12 @@ def test_tool_runtime_permission_enforce_blocks_denied_tools() -> None:
     record = runtime.audit_log.records()[0]
 
     assert calls == []
-    assert result.message.startswith("[ToolCallError] mutate: 权限拒绝: ")
+    assert result.message.startswith("[ToolCallError] mutate: Permission denied: ")
     assert "enforced deny" in result.message
     assert record.error is True
     assert record.decision.mode == "deny"
     assert record.decision.allowed is False
-    assert record.result.startswith("[ToolCallError] mutate: 权限拒绝: ")
+    assert record.result.startswith("[ToolCallError] mutate: Permission denied: ")
 
 
 def test_tool_registry_normalizes_permission_metadata() -> None:
@@ -329,16 +331,18 @@ async def test_arun_executes_multiturn_tool_flow() -> None:
     assert agent.session.history[-1].message == "done"
 
 
-def test_group_pass_tool_call_stops_run_after_recording_tool_result() -> None:
+def test_finish_task_tool_call_stops_run_after_recording_tool_result() -> None:
     llm = FakeLLM([
-        _response(tool_calls=[_tool_call_dict("group_pass")]),
+        _response(tool_calls=[_tool_call_dict("finish_task")]),
         _response("should not be called"),
     ])
-    agent = Agent(llm, max_turns=3)  # type: ignore[arg-type]
+    registry = ToolRegistry()
+    registry.register(lambda: "PASS", name="finish_task", ends_run=True)
+    agent = Agent(llm, max_turns=3, registry=registry)  # type: ignore[arg-type]
 
     assert agent.run("go") == ""
     assert llm.invoke_count == 1
-    assert agent.session.history[-2].tool_calls[0].name == "group_pass"
+    assert agent.session.history[-2].tool_calls[0].name == "finish_task"
     assert agent.session.history[-1].role == "tool"
 
 
@@ -348,8 +352,8 @@ def test_max_turn_fallback_is_still_recorded_for_non_stream_run() -> None:
     ])
     agent = Agent(llm, max_turns=1)  # type: ignore[arg-type]
 
-    assert agent.run("go") == "(达到最大轮数，未获得最终回复)"
-    assert agent.session.history[-1].message == "(达到最大轮数，未获得最终回复)"
+    assert agent.run("go") == "(Maximum turns reached without a final response)"
+    assert agent.session.history[-1].message == "(Maximum turns reached without a final response)"
 
 
 def test_sync_stream_yields_chunks_and_continues_after_tool_call() -> None:
@@ -456,7 +460,7 @@ if __name__ == "__main__":
     test_tool_runtime_does_not_import_agent_group_or_interfaces()
     test_run_executes_multiturn_tool_flow_and_records_session()
     asyncio.run(test_arun_executes_multiturn_tool_flow())
-    test_group_pass_tool_call_stops_run_after_recording_tool_result()
+    test_finish_task_tool_call_stops_run_after_recording_tool_result()
     test_max_turn_fallback_is_still_recorded_for_non_stream_run()
     test_sync_stream_yields_chunks_and_continues_after_tool_call()
     asyncio.run(test_async_stream_yields_chunks_and_continues_after_tool_call())

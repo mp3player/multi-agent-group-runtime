@@ -1,94 +1,29 @@
-"""文件操作工具。
+"""File operation tools.
 
-提供 LLM 读写文件的基础能力，避免每次都走 terminal 的 cat/sed/echo：
-    - read_file:    读取文件（支持部分读取、带行号）
-    - write_file:   写入文件（覆盖或追加）
-    - str_replace:  精确字符串替换（支持多处）
-    - list_dir:     列出目录内容
+Give the LLM direct file access without shell commands such as cat/sed/echo:
+    - read_file:    Read files with line numbers and partial reads.
+    - write_file:   Write files by overwriting or appending.
+    - str_replace:  Replace exact strings, optionally at every occurrence.
+    - list_dir:     List directory contents
 
-所有工具均返回字符串，失败也不抛异常（返回错误信息字符串），
-由 ToolRegistry 统一兜底。
+All tools return strings. Failures use the ToolFailure string subtype,
+with ToolRegistry providing a shared exception boundary.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
-from contextlib import contextmanager
-from contextvars import ContextVar
 import os
 from pathlib import Path
 
 from tools.decorator import tool
-
-DEFAULT_READ_FILE_MAX_CHARS = 12000
-_WORKSPACE_ROOTS: ContextVar[tuple[str, ...] | None] = ContextVar(
-    "workspace_roots",
-    default=None,
+from tools.results import ToolFailure
+from tools.file_io import (
+    MAX_DIRECTORY_CHARS, MAX_DIRECTORY_ENTRIES, MAX_READ_CHARS, MAX_TEXT_BYTES,
+    atomic_write, encode_text, read_editable_text, read_page,
 )
-
-
-def workspace_roots_from_value(value: str | Iterable[str] | None) -> tuple[str, ...]:
-    """Normalize workspace roots from config/env compatible values."""
-    if value is None:
-        return ()
-    if isinstance(value, str):
-        candidates = [part for part in value.split(os.pathsep) if part.strip()]
-    else:
-        candidates = [str(part) for part in value if str(part).strip()]
-    return tuple(candidates)
-
-
-@contextmanager
-def workspace_roots_context(roots: str | Iterable[str] | None) -> Iterator[None]:
-    """Temporarily use explicit workspace roots for workspace tools."""
-    normalized = workspace_roots_from_value(roots)
-    if not normalized:
-        yield
-        return
-    token = _WORKSPACE_ROOTS.set(normalized)
-    try:
-        yield
-    finally:
-        _WORKSPACE_ROOTS.reset(token)
-
-
-def _workspace_roots() -> list[Path]:
-    """Return allowed workspace roots for file tools.
-
-    Configure with MAS_WORKSPACE_ROOTS using os.pathsep separators. The default
-    keeps the current local-dev behavior usable while preventing accidental
-    writes into system paths.
-    """
-    configured = _WORKSPACE_ROOTS.get()
-    if configured is not None:
-        candidates = list(configured)
-    else:
-        raw = os.environ.get("MAS_WORKSPACE_ROOTS") or os.environ.get("WorkspaceRoots")
-        if raw:
-            candidates = [p for p in raw.split(os.pathsep) if p.strip()]
-        else:
-            candidates = [str(Path.home())]
-    return [Path(os.path.expanduser(p)).resolve() for p in candidates]
-
-
-def _resolve(path: str) -> Path:
-    """把路径解析为绝对 Path（支持 ~ 和相对路径）。"""
-    return Path(os.path.expanduser(path)).resolve()
-
-
-def _is_within_workspace(path: Path) -> bool:
-    for root in _workspace_roots():
-        try:
-            path.relative_to(root)
-            return True
-        except ValueError:
-            continue
-    return False
-
-
-def _workspace_error(path: Path) -> str:
-    roots = ", ".join(str(root) for root in _workspace_roots())
-    return f"[错误] 路径不在允许的工作区内: {path}。允许范围: {roots}"
+from tools.workspace import (
+    current_workspace, _is_within_workspace, _resolve, _workspace_error,
+)
 
 
 def _resolve_checked(path: str) -> Path | str:
@@ -104,85 +39,53 @@ def read_file(
     line_offset: int = 1,
     n_lines: int = 1000,
     max_chars: int = 0,
+    char_offset: int = 0,
 ) -> str:
-    """读取文本文件内容，带行号显示（类似 cat -n）。
+    """Read a text file with line numbers, similar to cat -n.
 
     Args:
-        path:        文件路径，支持 ~ 和相对路径
-        line_offset: 起始行号（从1开始），默认1
-        n_lines:     读取的行数，默认1000（最大1000行）
-        max_chars:   本次返回的最大字符数；0 表示读取 MAS_READ_FILE_MAX_CHARS
+        path:        File path supporting ~ and relative paths.
+        line_offset: Starting line number, counted from 1; defaults to 1.
+        n_lines:     Number of lines to read; defaults to 1000, with a maximum of 1000.
+        max_chars:   Maximum output characters; 0 uses workspace settings, with a hard limit of 65536.
+        char_offset: Unicode characters to skip in the starting line, counted from 0, for continuing long lines.
     """
     try:
+        if type(line_offset) is not int or type(n_lines) is not int:
+            raise TypeError('line_offset/n_lines must be integers')
+        if type(char_offset) is not int or char_offset < 0:
+            raise ValueError('char_offset must be a nonnegative integer')
+        char_limit = _read_file_max_chars(max_chars)
         p = _resolve_checked(path)
         if isinstance(p, str):
             return p
         if not p.exists():
-            return f"[错误] 文件不存在: {p}"
+            return ToolFailure(f"[Error] File does not exist: {p}")
         if not p.is_file():
-            return f"[错误] 不是文件: {p}"
+            return ToolFailure(f"[Error] Not a file: {p}")
         if p.stat().st_size == 0:
-            return "(空文件)"
+            return "(Empty file)"
 
-        # 限制参数范围
+        # Clamp parameters to their supported ranges.
         line_offset = max(1, line_offset)
         n_lines = max(1, min(n_lines, 1000))
 
         with p.open("r", encoding="utf-8") as f:
-            # 跳过前 N-1 行
-            for _ in range(line_offset - 1):
-                if not f.readline():
-                    break
-            # 读取目标行
-            lines = []
-            for _ in range(n_lines):
-                line = f.readline()
-                if not line:
-                    break
-                lines.append(line)
-            # 读满 n_lines 时试探是否还有更多内容
-            has_more = len(lines) == n_lines and bool(f.readline())
-
-        if not lines:
-            return f"(超出文件末尾，文件共 {line_offset - 1} 行)"
-
-        # 带行号格式化
-        numbered = []
-        for i, line in enumerate(lines):
-            num = line_offset + i
-            # 去掉末尾换行后再加，避免双换行
-            numbered.append(f"{num:>6}\t{line.rstrip(chr(10))}")
-        text = "\n".join(numbered)
-
-        total_hint = ""
-        if has_more:
-            last_line = line_offset + len(lines) - 1
-            total_hint = f"\n... (已读至第 {last_line} 行，后续还有内容)"
-        text = text + total_hint
-        char_limit = _read_file_max_chars(max_chars)
-        if char_limit > 0 and len(text) > char_limit:
-            return (
-                text[:char_limit]
-                + f"\n... (输出已截断，共 {len(text)} 字符；"
-                "可用 line_offset/n_lines 继续分页读取)"
+            return read_page(
+                f, line_offset=line_offset, char_offset=char_offset,
+                n_lines=n_lines, max_chars=char_limit,
             )
-        return text
     except UnicodeDecodeError:
-        return f"[错误] 文件不是文本或编码不是 UTF-8: {path}"
+        return ToolFailure(f"[Error] File is not text or is not encoded as UTF-8: {path}")
     except Exception as e:
-        return f"[错误] {type(e).__name__}: {e}"
+        return ToolFailure(f"[Error] {type(e).__name__}: {e}")
 
 
 def _read_file_max_chars(max_chars: int = 0) -> int:
-    if max_chars:
-        return max(0, int(max_chars))
-    raw = os.environ.get("MAS_READ_FILE_MAX_CHARS", "")
-    if raw:
-        try:
-            return max(0, int(raw))
-        except ValueError:
-            return DEFAULT_READ_FILE_MAX_CHARS
-    return DEFAULT_READ_FILE_MAX_CHARS
+    if type(max_chars) is not int or max_chars < 0:
+        raise ValueError('max_chars must be a nonnegative integer')
+    requested = max_chars or current_workspace().read_file_max_chars
+    return min(requested, MAX_READ_CHARS) if requested else MAX_READ_CHARS
 
 
 @tool
@@ -191,34 +94,37 @@ def write_file(
     content: str,
     mode: str = "overwrite",
 ) -> str:
-    """写入文本文件。
+    """Write a text file.
 
     Args:
-        path:    文件路径，支持 ~ 和相对路径。父目录不存在会自动创建。
-        content: 要写入的文本内容
-        mode:    写入模式："overwrite" 覆盖（默认），"append" 追加到末尾
+        path:    File path supporting ~ and relative paths. Missing parent directories are created.
+        content: Text content to write.
+        mode:    Write mode: "overwrite" replaces the file (default); "append" adds to the end.
     """
     try:
+        encoded = encode_text(content)
         p = _resolve_checked(path)
         if isinstance(p, str):
             return p
+        if p.exists() and not p.is_file():
+            if mode == 'overwrite' and p.is_dir():
+                raise IsADirectoryError(f'Target is a directory: {p}')
+            return ToolFailure(f"[Error] Target already exists and is not a file: {p}")
         if mode == "append":
-            # 追加模式：文件不存在则创建
-            if p.exists() and not p.is_file():
-                return f"[错误] 目标已存在且不是文件: {p}"
+            # Append mode creates the file if it does not exist.
             p.parent.mkdir(parents=True, exist_ok=True)
-            with p.open("a", encoding="utf-8") as f:
-                f.write(content)
-            return f"(已追加到 {p}，共 {len(content)} 字符)"
+            # Validation precedes opening. Append is not transactional if the
+            # OS fails partway through a write (for example on a full disk).
+            with p.open("ab") as f:
+                f.write(encoded)
+            return f"(Appended {len(content)} characters to {p})"
         elif mode == "overwrite":
-            p.parent.mkdir(parents=True, exist_ok=True)
-            with p.open("w", encoding="utf-8") as f:
-                f.write(content)
-            return f"(已写入 {p}，共 {len(content)} 字符)"
+            atomic_write(p, encoded)
+            return f"(Wrote {len(content)} characters to {p})"
         else:
-            return f"[错误] 不支持的 mode: {mode!r}，应为 'overwrite' 或 'append'"
+            return ToolFailure(f"[Error] Unsupported mode: {mode!r}; expected 'overwrite' or 'append'")
     except Exception as e:
-        return f"[错误] {type(e).__name__}: {e}"
+        return ToolFailure(f"[Error] {type(e).__name__}: {e}")
 
 
 @tool
@@ -228,71 +134,82 @@ def str_replace(
     new: str,
     replace_all: bool = False,
 ) -> str:
-    """替换文件中的字符串。
+    """Replace a string in a file.
 
     Args:
-        path:        文件路径
-        old:         要被替换的字符串（必须精确匹配，可多行）
-        new:         替换为的新字符串
-        replace_all: True 替换所有匹配，False 仅替换第一个（默认）
+        path:        File path.
+        old:         String to replace; must match exactly and may span multiple lines.
+        new:         Replacement string.
+        replace_all: True replaces all matches; False replaces only the first (default).
     """
     try:
+        old_bytes = len(encode_text(old))
+        new_bytes = len(encode_text(new))
+        if type(replace_all) is not bool:
+            raise TypeError('replace_all must be a bool')
         p = _resolve_checked(path)
         if isinstance(p, str):
             return p
         if not p.exists():
-            return f"[错误] 文件不存在: {p}"
+            return ToolFailure(f"[Error] File does not exist: {p}")
         if not p.is_file():
-            return f"[错误] 不是文件: {p}"
+            return ToolFailure(f"[Error] Not a file: {p}")
         if not old:
-            return "[错误] old 不能为空字符串"
+            return ToolFailure("[Error] old must not be an empty string")
         if old == new:
-            return "[错误] old 与 new 相同，无需替换"
+            return ToolFailure("[Error] old and new are identical; no replacement is needed")
 
-        with p.open("r", encoding="utf-8") as f:
-            content = f.read()
+        content, content_bytes = read_editable_text(p)
 
         count = content.count(old)
         if count == 0:
-            return f"[错误] 未找到匹配的字符串。文件共 {len(content)} 字符。"
+            return ToolFailure(f"[Error] No matching string found. The file has {len(content)} characters.")
 
+        replacements = count if replace_all else 1
+        if content_bytes + replacements * (new_bytes - old_bytes) > MAX_TEXT_BYTES:
+            raise ValueError(f'Replacement result exceeds the {MAX_TEXT_BYTES}-byte limit')
         if replace_all:
             new_content = content.replace(old, new)
-            replaced = count
         else:
             new_content = content.replace(old, new, 1)
-            replaced = 1
+        atomic_write(p, encode_text(new_content))
 
-        with p.open("w", encoding="utf-8") as f:
-            f.write(new_content)
-
-        suffix = f"（共 {count} 处，已替换全部）" if replace_all else f"（共 {count} 处，已替换第 1 处）"
-        return f"(已替换 {p} 中的字符串{suffix})"
+        suffix = f"; replaced all {count} matches" if replace_all else f"; replaced the first of {count} matches"
+        return f"(Replaced the string in {p}{suffix})"
     except Exception as e:
-        return f"[错误] {type(e).__name__}: {e}"
+        return ToolFailure(f"[Error] {type(e).__name__}: {e}")
 
 
 @tool
 def list_dir(path: str = ".") -> str:
-    """列出目录内容。
+    """List directory contents.
 
     Args:
-        path: 目录路径，默认当前目录
+        path: Directory path; defaults to the Agent working directory (the first configured workspace root).
     """
     try:
         p = _resolve_checked(path)
         if isinstance(p, str):
             return p
         if not p.exists():
-            return f"[错误] 路径不存在: {p}"
+            return ToolFailure(f"[Error] Path does not exist: {p}")
         if not p.is_dir():
-            return f"[错误] 不是目录: {p}"
+            return ToolFailure(f"[Error] Not a directory: {p}")
 
-        entries = sorted(p.iterdir(), key=lambda x: (not x.is_dir(), x.name))
+        entries = []
+        # Path.iterdir() materializes directory entries on supported Python
+        # versions; stop the OS iterator itself when the entry budget is full.
+        with os.scandir(p) as iterator:
+            for entry in iterator:
+                if len(entries) >= MAX_DIRECTORY_ENTRIES:
+                    return ToolFailure(f'[Error] Directory exceeds the {MAX_DIRECTORY_ENTRIES}-entry limit; select a subdirectory or use terminal to filter by name')
+                entries.append(Path(entry.path))
+        entries.sort(key=lambda x: (not x.is_dir(), x.name))
         if not entries:
-            return f"(空目录: {p})"
+            return f"(Empty directory: {p})"
 
         lines = []
+        output_chars = len(str(p)) + 2
         for entry in entries:
             if entry.is_dir():
                 lines.append(f"  {entry.name}/")
@@ -300,7 +217,10 @@ def list_dir(path: str = ".") -> str:
                 lines.append(f"  {entry.name} -> {entry.resolve().name}")
             else:
                 size = entry.stat().st_size
-                lines.append(f"  {entry.name}  ({size} 字节)")
+                lines.append(f"  {entry.name}  ({size} bytes)")
+            output_chars += len(lines[-1]) + 1
+            if output_chars > MAX_DIRECTORY_CHARS:
+                return ToolFailure(f'[Error] Directory output exceeds the {MAX_DIRECTORY_CHARS}-character limit; select a subdirectory or use terminal to filter by name')
         return f"{p}:\n" + "\n".join(lines)
     except Exception as e:
-        return f"[错误] {type(e).__name__}: {e}"
+        return ToolFailure(f"[Error] {type(e).__name__}: {e}")

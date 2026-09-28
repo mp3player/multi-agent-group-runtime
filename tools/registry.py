@@ -1,11 +1,12 @@
-"""Tool 注册表。
+"""Tool registry.
 
-负责工具的注册、删除、调用，以及把 ToolCall 转成字符串用于拼接到 message。
+Register, remove and invoke tools, and format ToolCall objects as message text.
 """
 
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from typing import Any, Callable
 
 from models import ToolCall
@@ -15,19 +16,19 @@ from tools.permissions import ToolPermission
 
 
 class ToolRegistryError(RuntimeError):
-    """ToolRegistry 相关异常。"""
+    """Exception raised by ToolRegistry."""
 
 
 class ToolCallError:
-    """工具调用失败的结果（不抛异常，避免崩会话）。
+    """A failed tool call returned as a value to keep the conversation running.
 
-    作为 call / call_tool_call 的返回值，调用方可通过 isinstance 检查
-    是否调用失败。
+    Returned by call / call_tool_call. Callers can use isinstance to check
+    whether the call failed.
 
-    属性：
-        name:    工具名
-        message: 失败原因
-        args:    调用时传入的参数（dict 或原始值）
+    Attributes:
+        name:    Tool name.
+        message: Failure reason.
+        args:    Arguments supplied to the call, as a dict or the original value.
     """
 
     def __init__(self, name: str, message: str, args: Any = None) -> None:
@@ -36,7 +37,7 @@ class ToolCallError:
         self.args = args
 
     def __bool__(self) -> bool:
-        # 始终为 False，方便 `if not result:` 判断失败
+        # Always false so callers can detect failure with `if not result:`.
         return False
 
     def __str__(self) -> str:
@@ -47,20 +48,21 @@ class ToolCallError:
 
 
 class ToolRegistry:
-    """工具注册表。
+    """Registry of available tools.
 
-    - register:   注册工具（支持 ToolFunction 或普通 function）
-    - unregister: 删除工具
-    - call:       按名调用工具
-    - tool_call_to_str: 把 ToolCall 转成字符串，便于拼接到 message
+    - register:   Register a ToolFunction or a plain function.
+    - unregister: Remove a tool
+    - call:       Call a tool by name
+    - tool_call_to_str: Format a ToolCall as text for a message
     """
 
     def __init__(self) -> None:
         self._tools: dict[str, ToolFunction] = {}
         self._permissions: dict[str, ToolPermission] = {}
+        self._terminal: dict[str, bool] = {}
         self.tool_audit_log = ToolAuditLog()
 
-    # ----- 注册 -----
+    # ----- Registration -----
 
     def register(
         self,
@@ -68,20 +70,22 @@ class ToolRegistry:
         *,
         permission: Any = None,
         name: str | None = None,
+        ends_run: bool = False,
     ) -> ToolFunction:
-        """注册一个工具。
+        """Register a tool.
 
-        支持两种入参：
-            1. 已用 @tool 装饰的 ToolFunction
-            2. 普通 Python function（自动包装为 ToolFunction）
+        Accepts either:
+            1. A ToolFunction created with the @tool decorator.
+            2. A plain Python function, automatically wrapped as a ToolFunction.
 
-        参数：
-            tool_or_func: 工具对象或普通函数
-            permission:   权限/side-effect metadata（默认不拦截调用）
-            name:         自定义工具名（默认取函数名）
+        Args:
+            tool_or_func: Tool object or plain function.
+            permission:   Permission and side-effect metadata; calls are allowed by default.
+            name:         Custom tool name; defaults to the function name.
+            ends_run:     End the current Agent run after successful execution; defaults to False.
 
-        返回：
-            注册后的 ToolFunction 对象
+        Returns:
+            The registered ToolFunction.
         """
         if isinstance(tool_or_func, ToolFunction):
             tf = tool_or_func
@@ -89,34 +93,36 @@ class ToolRegistry:
             tf = ToolFunction(tool_or_func)
         else:
             raise ToolRegistryError(
-                f"不支持注册的类型: {type(tool_or_func)}，"
-                "需要 ToolFunction 或普通函数"
+                f"Unsupported registration type: {type(tool_or_func)}; "
+                "expected a ToolFunction or plain function"
             )
 
         tool_name = name or tf.name
         if tool_name in self._tools:
-            raise ToolRegistryError(f"工具已存在: {tool_name}")
+            raise ToolRegistryError(f"Tool already exists: {tool_name}")
 
         self._tools[tool_name] = tf
+        self._terminal[tool_name] = ends_run
         self._permissions[tool_name] = ToolPermission.from_value(permission)
         return tf
 
-    # ----- 删除 -----
+    # ----- Removal -----
 
     def unregister(self, name: str) -> ToolFunction:
-        """删除工具，返回被移除的 ToolFunction。"""
+        """Remove a tool and return its ToolFunction."""
         if name not in self._tools:
-            raise ToolRegistryError(f"工具不存在: {name}")
+            raise ToolRegistryError(f"Tool does not exist: {name}")
         tf = self._tools.pop(name)
         self._permissions.pop(name, None)
+        self._terminal.pop(name, None)
         return tf
 
-    # ----- 查询 -----
+    # ----- Lookup -----
 
     def get(self, name: str) -> ToolFunction:
-        """获取工具。"""
+        """Get a tool."""
         if name not in self._tools:
-            raise ToolRegistryError(f"工具不存在: {name}")
+            raise ToolRegistryError(f"Tool does not exist: {name}")
         return self._tools[name]
 
     def has(self, name: str) -> bool:
@@ -126,19 +132,28 @@ class ToolRegistry:
         return list(self._tools.keys())
 
     def to_openai_tools(self) -> list[dict[str, Any]]:
-        """把所有已注册工具转成 OpenAI 接口的 tools 列表。"""
-        return [tf.to_openai_tool() for tf in self._tools.values()]
+        """Convert all registered tools to the OpenAI tools schema."""
+        schemas = []
+        for name, tf in self._tools.items():
+            schema = deepcopy(tf.to_openai_tool())
+            schema["function"]["name"] = name
+            schemas.append(schema)
+        return schemas
 
-    # ----- 调用 -----
+    def ends_run(self, name: str) -> bool:
+        """Whether a successful call to this registration terminates a run."""
+        return self._terminal.get(name, False)
 
-    def call(self, name: str, **kwargs: Any) -> Any:
-        """按名调用工具。
+    # ----- Invocation -----
 
-        异常会被捕获并转为 ToolCallError 返回，避免错误的 tool call
-        把会话崩掉。调用方可通过 isinstance(result, ToolCallError)
-        或检查返回值类型来判断是否调用失败。
+    def call(self, name: str, /, **kwargs: Any) -> Any:
+        """Call a tool by name.
 
-        权限决策由 ToolRuntime 负责；Registry 保持纯调用和兼容兜底。
+        Exceptions are caught and returned as ToolCallError values so a failed
+        tool call does not terminate the conversation. Callers can check
+        isinstance(result, ToolCallError) to detect failure.
+
+        ToolRuntime handles permission decisions; the registry handles invocation and compatibility fallbacks.
         """
         try:
             tf = self.get(name)
@@ -147,22 +162,22 @@ class ToolRegistry:
         try:
             return tf(**kwargs)
         except TypeError as e:
-            # 参数不匹配：缺参数 / 多余参数 / 类型不符等
+            # Argument mismatch: missing, unexpected or incompatible arguments.
             return ToolCallError(
-                name=name, message=f"参数错误: {e}", args=kwargs,
+                name=name, message=f"Invalid arguments: {e}", args=kwargs,
             )
         except Exception as e:
-            # 工具内部抛出的其他异常
+            # Other exceptions raised by the tool.
             return ToolCallError(
-                name=name, message=f"执行失败: {type(e).__name__}: {e}", args=kwargs,
+                name=name, message=f"Execution failed: {type(e).__name__}: {e}", args=kwargs,
             )
 
     def call_tool_call(self, tool_call: ToolCall) -> Any:
-        """根据 ToolCall 对象调用工具。
+        """Invoke a tool from a ToolCall object.
 
-        ToolCall 的 arguments 可以是 dict 或 JSON 字符串，会自动解析。
-        任何异常（JSON 解析、参数错误、工具内部异常）都会被捕获并返回
-        ToolCallError，不会抛出。
+        ToolCall arguments may be a dict or a JSON string and are parsed automatically.
+        JSON parsing errors, invalid arguments and tool exceptions are caught
+        and returned as ToolCallError values instead of being raised.
         """
         args = tool_call.arguments
         if isinstance(args, str):
@@ -171,28 +186,28 @@ class ToolRegistry:
             except json.JSONDecodeError as e:
                 return ToolCallError(
                     name=tool_call.name,
-                    message=f"参数不是合法 JSON: {args!r} ({e})",
+                    message=f"Arguments are not valid JSON: {args!r} ({e})",
                     args=tool_call.arguments,
                 )
         if not isinstance(args, dict):
             return ToolCallError(
                 name=tool_call.name,
-                message=f"参数必须是 dict 或 JSON 字符串，实际类型: {type(args).__name__}",
+                message=f"Arguments must be a dict or JSON string; got: {type(args).__name__}",
                 args=args,
             )
         return self.call(tool_call.name, **args)
 
-    # ----- ToolCall 转字符串 -----
+    # ----- ToolCall formatting -----
 
     def tool_call_to_str(self, tool_call: ToolCall) -> str:
-        """把 ToolCall 转成字符串，便于拼接到 message。
+        """Format a ToolCall as text for a message.
 
-        格式示例：
-            get_weather(city="北京")
+        Example:
+            get_weather(city="Beijing")
             search(query="hello", limit=5)
 
-        若工具未注册，退化为：
-            get_weather({"city": "北京"})
+        If the tool is not registered, use the fallback format:
+            get_weather({"city": "Beijing"})
         """
         name = tool_call.name
         args = tool_call.arguments
@@ -202,19 +217,19 @@ class ToolRegistry:
             except json.JSONDecodeError:
                 args = {"_raw": args}
 
-        # 尝试用注册表的签名格式化参数
+        # Format arguments using the registered function signature.
         if name in self._tools:
             tf = self._tools[name]
             return _format_call(name, args, tf)
-        # 工具未注册，退化为 JSON 形式
+        # Use the fallback format when the tool is not registered.
         return _format_call_raw(name, args)
 
-    # ----- 权限（留坑） -----
+    # ----- Permission metadata -----
 
     def set_permission(self, name: str, permission: Any) -> None:
-        """设置工具权限 metadata（默认策略不拦截调用）。"""
+        """Set tool permission metadata; the default policy allows calls."""
         if name not in self._tools:
-            raise ToolRegistryError(f"工具不存在: {name}")
+            raise ToolRegistryError(f"Tool does not exist: {name}")
         self._permissions[name] = ToolPermission.from_value(permission)
 
     def get_permission(self, name: str) -> ToolPermission | None:
@@ -234,7 +249,7 @@ class ToolRegistry:
 
 
 def _format_call(name: str, args: dict[str, Any], tf: ToolFunction) -> str:
-    """按函数签名格式化为 name(k=v, ...) 形式。"""
+    """Format a call as name(k=v, ...) using the function signature."""
     import inspect
 
     sig = inspect.signature(tf.func)
@@ -248,13 +263,13 @@ def _format_call(name: str, args: dict[str, Any], tf: ToolFunction) -> str:
 
 
 def _format_call_raw(name: str, args: dict[str, Any]) -> str:
-    """工具未注册时退化的格式化。"""
+    """Format a call without a registered tool signature."""
     parts = [f"{k}={_repr_value(v)}" for k, v in args.items()]
     return f"{name}({', '.join(parts)})"
 
 
 def _repr_value(v: Any) -> str:
-    """值的可读表示：字符串加引号，其他用 repr。"""
+    """Format values for display: quote strings and use repr for other types."""
     if isinstance(v, str):
         return f'"{v}"'
     return repr(v)

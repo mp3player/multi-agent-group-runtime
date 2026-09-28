@@ -1,0 +1,315 @@
+{
+  "date": "2026-09-28",
+  "scope": "Group history batching, provisional publication feedback, read-only status and stdin cancellation race",
+  "strategy_semantics_changed": false,
+  "offline_regression": {
+    "passed": 1206,
+    "skipped": 14,
+    "seconds": 40.09,
+    "exit_code": 0,
+    "log": "/tmp/mas-hardening-regression-final.log"
+  },
+  "endurance": {
+    "admitted_assignments": 176,
+    "business_calls": {
+      "alice": 72,
+      "bob": 68,
+      "carol": 32
+    },
+    "compactions": {
+      "alice": 8,
+      "bob": 8,
+      "carol": 7
+    },
+    "discussion_seconds": [
+      0.183299,
+      0.354845,
+      0.285699,
+      0.638335,
+      0.598736,
+      0.947191,
+      1.748598,
+      1.742349,
+      2.837139,
+      3.073082,
+      3.202215,
+      3.655731,
+      0.332506,
+      4.511782,
+      3.702828,
+      2.090261,
+      3.469704,
+      4.338962,
+      4.783655,
+      4.611206,
+      5.871102,
+      5.112866,
+      1.410581,
+      5.932669,
+      7.878383,
+      4.042421,
+      9.54902,
+      9.632678,
+      8.593603,
+      9.153694,
+      9.439072,
+      8.786011,
+      2.104787,
+      10.583147,
+      11.608028,
+      4.727868,
+      12.178568,
+      11.602653,
+      12.307376,
+      11.479175
+    ],
+    "discussions": {
+      "cancel": 4,
+      "fail": 4,
+      "start": 32
+    },
+    "peak_provider_calls": 2,
+    "summary_calls": {
+      "alice": 8,
+      "bob": 8,
+      "carol": 7
+    },
+    "seconds": 209.18,
+    "exit_code": 0,
+    "log": "/tmp/mas-hardening-endurance.log",
+    "xml": "/tmp/mas-hardening-endurance.xml",
+    "warning": "Pytest record_property warning under default xunit2 reporting; property retained and parsed"
+  },
+  "history_benchmark": {
+    "samples": [
+      {
+        "version": "before",
+        "sources": 19,
+        "repeat": 0,
+        "store_crossings": 40,
+        "iterator_seconds": 0.00530029134824872,
+        "store_seconds": 0.004590494325384498,
+        "execution_seconds": 0.03800923703238368
+      },
+      {
+        "version": "after",
+        "sources": 19,
+        "repeat": 0,
+        "store_crossings": 2,
+        "iterator_seconds": 0.0012767142616212368,
+        "store_seconds": 0.0005439461674541235,
+        "execution_seconds": 0.03628880484029651
+      },
+      {
+        "version": "before",
+        "sources": 19,
+        "repeat": 1,
+        "store_crossings": 40,
+        "iterator_seconds": 0.004889675183221698,
+        "store_seconds": 0.0041177719831466675,
+        "execution_seconds": 0.03934205719269812
+      },
+      {
+        "version": "after",
+        "sources": 19,
+        "repeat": 1,
+        "store_crossings": 2,
+        "iterator_seconds": 0.001292310655117035,
+        "store_seconds": 0.0006029850337654352,
+        "execution_seconds": 0.03679492906667292
+      },
+      {
+        "version": "before",
+        "sources": 19,
+        "repeat": 2,
+        "store_crossings": 40,
+        "iterator_seconds": 0.008110038470476866,
+        "store_seconds": 0.00697249174118042,
+        "execution_seconds": 0.043944297824054956
+      },
+      {
+        "version": "after",
+        "sources": 19,
+        "repeat": 2,
+        "store_crossings": 2,
+        "iterator_seconds": 0.0011794234160333872,
+        "store_seconds": 0.0005868261214345694,
+        "execution_seconds": 0.03253261395730078
+      },
+      {
+        "version": "before",
+        "sources": 79,
+        "repeat": 0,
+        "store_crossings": 166,
+        "iterator_seconds": 0.022983164293691516,
+        "store_seconds": 0.01953549007885158,
+        "execution_seconds": 0.19220235501416028
+      },
+      {
+        "version": "after",
+        "sources": 79,
+        "repeat": 0,
+        "store_crossings": 8,
+        "iterator_seconds": 0.004844825016334653,
+        "store_seconds": 0.002055566292256117,
+        "execution_seconds": 0.19714145502075553
+      },
+      {
+        "version": "before",
+        "sources": 79,
+        "repeat": 1,
+        "store_crossings": 166,
+        "iterator_seconds": 0.02225746028125286,
+        "store_seconds": 0.019013913348317146,
+        "execution_seconds": 0.19154312298633158
+      },
+      {
+        "version": "after",
+        "sources": 79,
+        "repeat": 1,
+        "store_crossings": 8,
+        "iterator_seconds": 0.004718427546322346,
+        "store_seconds": 0.0020362199284136295,
+        "execution_seconds": 0.17656601290218532
+      },
+      {
+        "version": "before",
+        "sources": 79,
+        "repeat": 2,
+        "store_crossings": 166,
+        "iterator_seconds": 0.023050426971167326,
+        "store_seconds": 0.019710737513378263,
+        "execution_seconds": 0.18913815100677311
+      },
+      {
+        "version": "after",
+        "sources": 79,
+        "repeat": 2,
+        "store_crossings": 8,
+        "iterator_seconds": 0.004718878073617816,
+        "store_seconds": 0.0021608518436551094,
+        "execution_seconds": 0.1966700239572674
+      },
+      {
+        "version": "before",
+        "sources": 159,
+        "repeat": 0,
+        "store_crossings": 334,
+        "iterator_seconds": 0.048802588135004044,
+        "store_seconds": 0.041983435628935695,
+        "execution_seconds": 0.5097688441164792
+      },
+      {
+        "version": "after",
+        "sources": 159,
+        "repeat": 0,
+        "store_crossings": 16,
+        "iterator_seconds": 0.009497465332970023,
+        "store_seconds": 0.0038701235316693783,
+        "execution_seconds": 0.4803733960725367
+      },
+      {
+        "version": "before",
+        "sources": 159,
+        "repeat": 1,
+        "store_crossings": 334,
+        "iterator_seconds": 0.04695322806946933,
+        "store_seconds": 0.04054772458039224,
+        "execution_seconds": 0.5005915879737586
+      },
+      {
+        "version": "after",
+        "sources": 159,
+        "repeat": 1,
+        "store_crossings": 16,
+        "iterator_seconds": 0.009824842913076282,
+        "store_seconds": 0.0044525074772536755,
+        "execution_seconds": 0.4832858690060675
+      },
+      {
+        "version": "before",
+        "sources": 159,
+        "repeat": 2,
+        "store_crossings": 334,
+        "iterator_seconds": 0.05180199653841555,
+        "store_seconds": 0.04442208865657449,
+        "execution_seconds": 0.5453132560942322
+      },
+      {
+        "version": "after",
+        "sources": 159,
+        "repeat": 2,
+        "store_crossings": 16,
+        "iterator_seconds": 0.01155779231339693,
+        "store_seconds": 0.005136695457622409,
+        "execution_seconds": 0.49794431310147047
+      }
+    ],
+    "median": [
+      {
+        "version": "before",
+        "sources": 19,
+        "store_crossings": 40,
+        "iterator_seconds": 0.00530029134824872,
+        "store_seconds": 0.004590494325384498,
+        "execution_seconds": 0.03934205719269812
+      },
+      {
+        "version": "after",
+        "sources": 19,
+        "store_crossings": 2,
+        "iterator_seconds": 0.0012767142616212368,
+        "store_seconds": 0.0005868261214345694,
+        "execution_seconds": 0.03628880484029651
+      },
+      {
+        "version": "before",
+        "sources": 79,
+        "store_crossings": 166,
+        "iterator_seconds": 0.022983164293691516,
+        "store_seconds": 0.01953549007885158,
+        "execution_seconds": 0.19154312298633158
+      },
+      {
+        "version": "after",
+        "sources": 79,
+        "store_crossings": 8,
+        "iterator_seconds": 0.004718878073617816,
+        "store_seconds": 0.002055566292256117,
+        "execution_seconds": 0.1966700239572674
+      },
+      {
+        "version": "before",
+        "sources": 159,
+        "store_crossings": 334,
+        "iterator_seconds": 0.048802588135004044,
+        "store_seconds": 0.041983435628935695,
+        "execution_seconds": 0.5097688441164792
+      },
+      {
+        "version": "after",
+        "sources": 159,
+        "store_crossings": 16,
+        "iterator_seconds": 0.009824842913076282,
+        "store_seconds": 0.0044525074772536755,
+        "execution_seconds": 0.4832858690060675
+      }
+    ],
+    "note": "Real Group/store/worker, scripted provider, three sequential paired repeats, no compaction. Iterator time excludes yielded-batch application and consumer validation work."
+  },
+  "independent_review": {
+    "must_fix_findings": 0,
+    "direct_tests_passed": 36,
+    "binding_comparison_rows": 158,
+    "binding_comparison_pages": 16,
+    "evidence_parity_combinations": 144
+  },
+  "live_model_comparison_run": false,
+  "limitations": [
+    "Historical source and archive coverage scans still grow with retained history",
+    "Diagnostic aggregate scans grow with invocation size",
+    "Feedback does not force another inference after yield",
+    "No demonstrated improvement in live-model collaboration completion rate",
+    "No automatic return requests or semantic completion detection added"
+  ]
+}

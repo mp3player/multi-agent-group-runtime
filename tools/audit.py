@@ -48,11 +48,24 @@ class ToolAuditRecord:
 
 @dataclass(slots=True)
 class ToolAuditLog:
-    """Append-only in-memory audit log."""
+    """Bounded recent audit records, with optional append-only persistence."""
 
     records_list: list[ToolAuditRecord] = field(default_factory=list)
     next_id: int = 1
     sink: "ToolAuditJsonlSink | None" = None
+    max_records: int = 1000
+    sink_error_count: int = field(default=0, init=False)
+    last_sink_error: str | None = field(default=None, init=False)
+
+    def __post_init__(self) -> None:
+        if type(self.max_records) is not int or self.max_records < 0:
+            raise ValueError('max_records must be a non-negative integer')
+        self._trim()
+
+    def _trim(self) -> None:
+        excess = len(self.records_list) - self.max_records
+        if excess > 0:
+            del self.records_list[:excess]
 
     def append(
         self,
@@ -79,12 +92,15 @@ class ToolAuditLog:
             decision=decision,
         )
         self.records_list.append(record)
+        self._trim()
         self.next_id += 1
         if self.sink is not None:
             try:
                 self.sink.write(record)
-            except OSError:
-                pass
+            except Exception as exc:
+                # Observability must not replace the outcome of a completed effect.
+                self.sink_error_count += 1
+                self.last_sink_error = f'{type(exc).__name__}: {exc}'[:240]
         return record
 
     def records(self, limit: int | None = None) -> list[ToolAuditRecord]:
@@ -95,6 +111,8 @@ class ToolAuditLog:
     def clear(self) -> None:
         self.records_list.clear()
         self.next_id = 1
+        self.sink_error_count = 0
+        self.last_sink_error = None
 
     def set_sink(self, sink: "ToolAuditJsonlSink | None") -> None:
         self.sink = sink
@@ -109,7 +127,8 @@ class ToolAuditJsonlSink:
     def write(self, record: ToolAuditRecord) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record.to_dict(), ensure_ascii=False) + "\n")
+            # POSIX filenames can contain surrogate-escaped bytes.
+            handle.write(json.dumps(record.to_dict(), ensure_ascii=True) + "\n")
 
 
 def audit_sink_from_path(path: str | Path | None) -> ToolAuditJsonlSink | None:

@@ -27,6 +27,9 @@ class Message:
     def __init__(self, role: str, message: str = "") -> None:
         self.role = role
         self.message = message
+        # Execution-only outcome metadata; provider/session payloads need only content.
+        self.tool_success = False
+        self.ends_run = False
 
     def to_dict(self) -> dict[str, Any]:
         return {"role": self.role, "content": self.message}
@@ -116,6 +119,8 @@ class Chunk(Message):
         reasoning: reasoning delta
         tool_calls: complete ToolCall list, yielded once at stream end
         finish_reason: finish reason such as stop, tool_calls, or length
+        usage: final request usage, or None when the provider did not report it
+        response_model: provider model identity, with the request model as fallback
     """
 
     def __init__(
@@ -124,11 +129,15 @@ class Chunk(Message):
         reasoning: str = "",
         tool_calls: list[ToolCall] | None = None,
         finish_reason: str | None = None,
+        usage: dict[str, Any] | None = None,
+        response_model: str | None = None,
     ) -> None:
         super().__init__("assistant", message)
         self.reasoning = reasoning
         self.tool_calls = tool_calls
         self.finish_reason = finish_reason
+        self.usage = usage
+        self.response_model = response_model
 
     def __repr__(self) -> str:
         parts = []
@@ -140,6 +149,10 @@ class Chunk(Message):
             parts.append(f"tool_calls={self.tool_calls!r}")
         if self.finish_reason:
             parts.append(f"finish_reason={self.finish_reason!r}")
+        if self.usage is not None:
+            parts.append(f"usage={self.usage!r}")
+        if self.response_model is not None:
+            parts.append(f"response_model={self.response_model!r}")
         return f"Chunk({', '.join(parts)})"
 
 

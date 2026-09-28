@@ -17,6 +17,38 @@ class PromptModuleLoader(Protocol):
         """Load one prompt module."""
         ...
 
+    def load_all(self) -> list[str]:
+        """Load all prompt modules in the configured directory."""
+        ...
+
+
+def load_default_prompt_modules(
+    loader: PromptModuleLoader, *, order_file: str | Path = "order.txt",
+) -> list[str]:
+    """Use the configured order, available common modules, then all Markdown files.
+
+    Explicit order files are authoritative, including empty files and missing
+    module names. Relative order paths are resolved under ``prompts_dir``.
+    """
+    order_path = Path(order_file)
+    if not order_path.is_absolute():
+        order_path = loader.prompts_dir / order_path
+    if order_path.is_file():
+        names = [
+            name for line in order_path.read_text(encoding="utf-8").splitlines()
+            if (name := line.strip()) and not name.startswith("#")
+        ]
+    else:
+        names = [
+            spec.name for spec in COMMON_PROMPT_MODULES
+            if resolve_prompt_spec_path(loader.prompts_dir, spec).is_file()
+        ]
+        if not names:
+            return loader.load_all()
+    for name in names:
+        loader.load(name)
+    return names
+
 
 def resolve_prompt_spec_path(prompts_dir: str | Path, spec: PromptModuleSpec) -> Path:
     """Resolve a prompt spec path relative to one prompts directory."""

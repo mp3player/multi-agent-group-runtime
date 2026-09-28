@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -58,16 +59,24 @@ async def test_async_sse_data_parser_handles_complete_events() -> None:
 
 
 async def test_async_client_is_reused() -> None:
+    proxy_env = {
+        name: os.environ.pop(name)
+        for name in ("ALL_PROXY", "all_proxy")
+        if name in os.environ
+    }
     client = LLMClient(
         base_url="http://127.0.0.1:1/v1",
         api_key="dummy",
         model="dummy",
     )
-    first = await client._get_async_client()
-    second = await client._get_async_client()
-    assert first is second
-    await client.aclose()
-    assert first.is_closed
+    try:
+        first = await client._get_async_client()
+        second = await client._get_async_client()
+        assert first is second
+        await client.aclose()
+        assert first.is_closed
+    finally:
+        os.environ.update(proxy_env)
 
 
 if __name__ == "__main__":

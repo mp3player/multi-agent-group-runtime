@@ -7,13 +7,15 @@ from core.session import Session
 from models import System, User
 
 
-def test_history_limit_prunes_old_non_system_messages() -> None:
+def test_history_limit_defers_safe_cache_cleanup_until_requested() -> None:
     session = Session(history_limit=3)
 
     session.add(System("base"))
     for idx in range(5):
         session.add(User(f"message {idx}"))
 
+    assert len(session.history) == 6
+    session.maintain_history()
     assert [msg.role for msg in session.history] == ["system", "user", "user"]
     assert [msg.message for msg in session.history] == [
         "base",
@@ -31,4 +33,4 @@ def test_history_limit_prunes_old_non_system_messages() -> None:
 
 
 if __name__ == "__main__":
-    test_history_limit_prunes_old_non_system_messages()
+    test_history_limit_defers_safe_cache_cleanup_until_requested()

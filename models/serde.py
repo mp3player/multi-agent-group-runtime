@@ -18,6 +18,7 @@ from models.message import (
     ToolCall,
     User,
 )
+from models.message_codec import encode_tool_call
 
 
 class MessageSerde:
@@ -43,7 +44,8 @@ class JsonMessageSerde(MessageSerde):
     load maps a dict back into the matching Message subclass.
 
     File IO is provided by save_to_file/load_from_file and stores a Message
-    list as a JSON array.
+    list as a JSON array. This compatibility format retains the legacy
+    ``message`` key and text tool arguments; it is not a strict session snapshot.
     """
 
     def save(self, message: Message) -> dict[str, Any]:
@@ -54,59 +56,41 @@ class JsonMessageSerde(MessageSerde):
             return {"type": "User", "role": "user", "message": message.message}
         if isinstance(message, Reasoning):
             return {"type": "Reasoning", "role": "reasoning", "message": message.message}
-        if isinstance(message, AI):
-            tool_calls_data: list[dict[str, Any]] = []
-            if message.tool_calls:
-                for tc in message.tool_calls:
-                    args = tc.arguments
-                    if not isinstance(args, str):
-                        args = json.dumps(args, ensure_ascii=False)
-                    tool_calls_data.append({
-                        "id": tc.id,
-                        "name": tc.name,
-                        "arguments": args,
-                    })
-            return {
-                "type": "AI",
+        if isinstance(message, (AI, Chunk)):
+            data = {
+                "type": "AI" if isinstance(message, AI) else "Chunk",
                 "role": "assistant",
                 "message": message.message,
                 "reasoning": message.reasoning,
-                "tool_calls": tool_calls_data,
+                "tool_calls": [
+                    encode_tool_call(call, arguments_as_text=True)
+                    for call in message.tool_calls or []
+                ],
             }
-        if isinstance(message, Chunk):
-            # Chunk may carry tool_calls and finish_reason.
-            tool_calls_data: list[dict[str, Any]] = []
-            if message.tool_calls:
-                for tc in message.tool_calls:
-                    args = tc.arguments
-                    if not isinstance(args, str):
-                        args = json.dumps(args, ensure_ascii=False)
-                    tool_calls_data.append({
-                        "id": tc.id,
-                        "name": tc.name,
-                        "arguments": args,
-                    })
-            return {
-                "type": "Chunk",
-                "role": "assistant",
-                "message": message.message,
-                "reasoning": message.reasoning,
-                "tool_calls": tool_calls_data,
-                "finish_reason": message.finish_reason,
-            }
+            if isinstance(message, Chunk):
+                data.update(
+                    finish_reason=message.finish_reason,
+                    usage=message.usage,
+                    response_model=message.response_model,
+                )
+            return data
         if isinstance(message, ToolCall):
-            args = message.arguments
-            if not isinstance(args, str):
-                args = json.dumps(args, ensure_ascii=False)
             return {
                 "type": "ToolCall",
                 "role": "assistant",
-                "id": message.id,
-                "name": message.name,
-                "arguments": args,
+                **encode_tool_call(message, arguments_as_text=True),
             }
         # Unknown subclasses fall back to base Message data.
-        return {"type": "Message", "role": message.role, "message": message.message}
+        data = {
+            "type": "Message",
+            "role": message.role,
+            "message": message.message,
+            "tool_success": message.tool_success,
+            "ends_run": message.ends_run,
+        }
+        if message.role == "tool" and hasattr(message, "tool_call_id"):
+            data["tool_call_id"] = message.tool_call_id
+        return data
 
     def load(self, data: dict[str, Any]) -> Message:
         """Restore the matching Message subclass from a dict."""
@@ -117,7 +101,7 @@ class JsonMessageSerde(MessageSerde):
             return User(data["message"])
         if t == "Reasoning":
             return Reasoning(data["message"])
-        if t == "AI":
+        if t in ("AI", "Chunk"):
             tool_calls: list[ToolCall] | None = None
             tc_list = data.get("tool_calls") or []
             if tc_list:
@@ -125,30 +109,29 @@ class JsonMessageSerde(MessageSerde):
                     ToolCall(tc["id"], tc["name"], tc.get("arguments", ""))
                     for tc in tc_list
                 ]
-            return AI(
-                data.get("message", ""),
-                data.get("reasoning", ""),
-                tool_calls=tool_calls,
-            )
-        if t == "Chunk":
-            # Restore Chunk with tool_calls and finish_reason.
-            tool_calls: list[ToolCall] | None = None
-            tc_list = data.get("tool_calls") or []
-            if tc_list:
-                tool_calls = [
-                    ToolCall(tc["id"], tc["name"], tc.get("arguments", ""))
-                    for tc in tc_list
-                ]
+            if t == "AI":
+                return AI(
+                    data.get("message", ""),
+                    data.get("reasoning", ""),
+                    tool_calls=tool_calls,
+                )
             return Chunk(
                 message=data.get("message", ""),
                 reasoning=data.get("reasoning", ""),
                 tool_calls=tool_calls,
                 finish_reason=data.get("finish_reason"),
+                usage=data.get("usage"),
+                response_model=data.get("response_model"),
             )
         if t == "ToolCall":
             return ToolCall(data["id"], data["name"], data.get("arguments", ""))
         # Fall back to base Message.
-        return Message(data.get("role", ""), data.get("message", ""))
+        message = Message(data.get("role", ""), data.get("message", ""))
+        message.tool_success = data.get("tool_success", False)
+        message.ends_run = data.get("ends_run", False)
+        if message.role == "tool" and "tool_call_id" in data:
+            message.tool_call_id = data["tool_call_id"]
+        return message
 
     def save_to_file(self, messages: list[Message], path: str | os.PathLike[str]) -> None:
         """Save a Message list to a JSON file."""

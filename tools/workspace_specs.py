@@ -5,6 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from tools.builtin import terminal
+from tools.decorator import ToolFunction
+from tools.file_ops import list_dir, read_file, str_replace, write_file
+
 
 ToolSideEffect = Literal[
     "read_only",
@@ -18,53 +22,39 @@ ToolSideEffect = Literal[
 
 @dataclass(frozen=True, slots=True)
 class WorkspaceToolSpec:
-    """Target declaration for one workspace tool."""
+    """A decorated workspace tool and its permission classification."""
 
-    name: str
+    tool: ToolFunction
     side_effect: ToolSideEffect
-    handler_module: str
-    handler_name: str
 
+    @property
+    def name(self) -> str:
+        return self.tool.name
+
+    @property
+    def handler_module(self) -> str:
+        """Expose the original handler location for compatibility."""
+        return self.tool.func.__module__
+
+    @property
+    def handler_name(self) -> str:
+        """Expose the original handler name for compatibility."""
+        return self.tool.func.__name__
+
+
+_WORKSPACE_TOOLS: tuple[WorkspaceToolSpec, ...] = (
+    WorkspaceToolSpec(terminal, "external_effect"),
+    WorkspaceToolSpec(read_file, "read_only"),
+    WorkspaceToolSpec(write_file, "workspace_mutating"),
+    WorkspaceToolSpec(str_replace, "workspace_mutating"),
+    WorkspaceToolSpec(list_dir, "read_only"),
+)
 
 WORKSPACE_TOOL_SPECS: dict[str, WorkspaceToolSpec] = {
-    "terminal": WorkspaceToolSpec(
-        name="terminal",
-        side_effect="external_effect",
-        handler_module="tools.builtin",
-        handler_name="terminal",
-    ),
-    "read_file": WorkspaceToolSpec(
-        name="read_file",
-        side_effect="read_only",
-        handler_module="tools.file_ops",
-        handler_name="read_file",
-    ),
-    "list_dir": WorkspaceToolSpec(
-        name="list_dir",
-        side_effect="read_only",
-        handler_module="tools.file_ops",
-        handler_name="list_dir",
-    ),
-    "write_file": WorkspaceToolSpec(
-        name="write_file",
-        side_effect="workspace_mutating",
-        handler_module="tools.file_ops",
-        handler_name="write_file",
-    ),
-    "str_replace": WorkspaceToolSpec(
-        name="str_replace",
-        side_effect="workspace_mutating",
-        handler_module="tools.file_ops",
-        handler_name="str_replace",
-    ),
+    spec.name: spec for spec in _WORKSPACE_TOOLS
 }
-
-DEFAULT_WORKSPACE_TOOL_ORDER: tuple[str, ...] = (
-    "terminal",
-    "read_file",
-    "write_file",
-    "str_replace",
-    "list_dir",
+DEFAULT_WORKSPACE_TOOL_ORDER: tuple[str, ...] = tuple(
+    spec.name for spec in _WORKSPACE_TOOLS
 )
 
 
@@ -75,7 +65,7 @@ def workspace_tool_names() -> set[str]:
 
 def workspace_tool_specs() -> tuple[WorkspaceToolSpec, ...]:
     """Return workspace tool specs in canonical registration order."""
-    return tuple(WORKSPACE_TOOL_SPECS[name] for name in DEFAULT_WORKSPACE_TOOL_ORDER)
+    return _WORKSPACE_TOOLS
 
 
 def workspace_tool_spec(name: str) -> WorkspaceToolSpec | None:

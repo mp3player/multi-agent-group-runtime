@@ -1,0 +1,614 @@
+{
+  "date": "2026-09-28",
+  "scope": "Separate attribution controls; original held-out results unchanged",
+  "same_provider_and_sampling_settings": true,
+  "raw_http_controls": [
+    {
+      "source_case": 1,
+      "mode": "exact_request",
+      "passed": false,
+      "artifacts": [
+        {
+          "kind": "delivery_plan",
+          "orders": [
+            {
+              "order": "O1",
+              "status": "shipped",
+              "carrier": "cold_east"
+            },
+            {
+              "order": "O2",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O3",
+              "status": "shipped",
+              "carrier": "ground_east"
+            },
+            {
+              "order": "O4",
+              "status": "out_of_stock",
+              "carrier": "fast_east"
+            },
+            {
+              "order": "O5",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O6",
+              "status": "out_of_stock",
+              "carrier": "ground_west"
+            }
+          ],
+          "remaining_units": 1,
+          "total_shipping_fee": 12,
+          "evidence_refs": [
+            "ORDERS-1-ebc7cca4",
+            "STOCK-1-ebc7cca4",
+            "CARRIERS-1-ebc7cca4"
+          ]
+        }
+      ],
+      "failures": [
+        "('delivery.orders[O4].carrier', 'fast_east', None)"
+      ],
+      "no_artifact": false,
+      "finish_reasons": [
+        "tool_calls"
+      ],
+      "usage": {
+        "prompt_tokens": 4373,
+        "total_tokens": 4734,
+        "completion_tokens": 361,
+        "prompt_tokens_details": null
+      },
+      "elapsed_seconds": 8.59,
+      "original_grade": {
+        "passed": false,
+        "artifacts": [
+          {
+            "kind": "delivery_plan",
+            "orders": [
+              {
+                "order": "O1",
+                "status": "shipped",
+                "carrier": "cold_east"
+              },
+              {
+                "order": "O2",
+                "status": "no_carrier",
+                "carrier": null
+              },
+              {
+                "order": "O3",
+                "status": "shipped",
+                "carrier": "ground_east"
+              },
+              {
+                "order": "O4",
+                "status": "out_of_stock",
+                "carrier": "fast_east"
+              },
+              {
+                "order": "O5",
+                "status": "no_carrier",
+                "carrier": null
+              },
+              {
+                "order": "O6",
+                "status": "out_of_stock",
+                "carrier": "ground_west"
+              }
+            ],
+            "remaining_units": 1,
+            "total_shipping_fee": 12,
+            "evidence_refs": [
+              "ORDERS-1-ebc7cca4",
+              "STOCK-1-ebc7cca4",
+              "CARRIERS-1-ebc7cca4"
+            ]
+          }
+        ],
+        "failures": [
+          "('delivery.orders[O4].carrier', 'fast_east', None)"
+        ],
+        "no_artifact": false,
+        "finish_reasons": [
+          "tool_calls"
+        ],
+        "usage": {
+          "prompt_tokens": 4373,
+          "total_tokens": 4734,
+          "completion_tokens": 361,
+          "prompt_tokens_details": null
+        }
+      }
+    },
+    {
+      "source_case": 1,
+      "mode": "flat_task",
+      "passed": false,
+      "artifacts": [
+        {
+          "kind": "delivery_plan",
+          "orders": [
+            {
+              "order": "O1",
+              "status": "shipped",
+              "carrier": "cold_east"
+            },
+            {
+              "order": "O2",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O3",
+              "status": "shipped",
+              "carrier": "ground_east"
+            },
+            {
+              "order": "O4",
+              "status": "out_of_stock",
+              "carrier": "fast_east"
+            },
+            {
+              "order": "O5",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O6",
+              "status": "out_of_stock",
+              "carrier": "ground_west"
+            }
+          ],
+          "remaining_units": 1,
+          "total_shipping_fee": 12,
+          "evidence_refs": [
+            "ORDERS-1-ebc7cca4",
+            "STOCK-1-ebc7cca4",
+            "CARRIERS-1-ebc7cca4"
+          ]
+        }
+      ],
+      "failures": [
+        "('delivery.orders[O4].carrier', 'fast_east', None)"
+      ],
+      "no_artifact": false,
+      "finish_reasons": [
+        "stop"
+      ],
+      "usage": {
+        "prompt_tokens": 666,
+        "total_tokens": 973,
+        "completion_tokens": 307,
+        "prompt_tokens_details": null
+      },
+      "elapsed_seconds": 6.289,
+      "original_grade": {
+        "passed": false,
+        "artifacts": [
+          {
+            "kind": "delivery_plan",
+            "orders": [
+              {
+                "order": "O1",
+                "status": "shipped",
+                "carrier": "cold_east"
+              },
+              {
+                "order": "O2",
+                "status": "no_carrier",
+                "carrier": null
+              },
+              {
+                "order": "O3",
+                "status": "shipped",
+                "carrier": "ground_east"
+              },
+              {
+                "order": "O4",
+                "status": "out_of_stock",
+                "carrier": "fast_east"
+              },
+              {
+                "order": "O5",
+                "status": "no_carrier",
+                "carrier": null
+              },
+              {
+                "order": "O6",
+                "status": "out_of_stock",
+                "carrier": "ground_west"
+              }
+            ],
+            "remaining_units": 1,
+            "total_shipping_fee": 12,
+            "evidence_refs": [
+              "ORDERS-1-ebc7cca4",
+              "STOCK-1-ebc7cca4",
+              "CARRIERS-1-ebc7cca4"
+            ]
+          }
+        ],
+        "failures": [
+          "('delivery.orders[O4].carrier', 'fast_east', None)"
+        ],
+        "no_artifact": false,
+        "finish_reasons": [
+          "tool_calls"
+        ],
+        "usage": {
+          "prompt_tokens": 4373,
+          "total_tokens": 4734,
+          "completion_tokens": 361,
+          "prompt_tokens_details": null
+        }
+      }
+    },
+    {
+      "source_case": 4,
+      "mode": "exact_request",
+      "passed": false,
+      "artifacts": [
+        {
+          "kind": "delivery_plan",
+          "orders": [
+            {
+              "order": "O1",
+              "status": "shipped",
+              "carrier": "cold_east"
+            },
+            {
+              "order": "O2",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O3",
+              "status": "shipped",
+              "carrier": "ground_east"
+            },
+            {
+              "order": "O4",
+              "status": "shipped",
+              "carrier": "fast_east"
+            },
+            {
+              "order": "O5",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O6",
+              "status": "out_of_stock",
+              "carrier": null
+            }
+          ],
+          "remaining_units": 1,
+          "total_shipping_fee": 21,
+          "evidence_refs": [
+            "ORDERS-2-9bc8f02d",
+            "STOCK-2-9bc8f02d",
+            "CARRIERS-2-9bc8f02d"
+          ]
+        }
+      ],
+      "failures": [
+        "('delivery.orders[O4].status', 'shipped', 'out_of_stock')"
+      ],
+      "no_artifact": false,
+      "finish_reasons": [
+        "tool_calls"
+      ],
+      "usage": {
+        "prompt_tokens": 4363,
+        "total_tokens": 4730,
+        "completion_tokens": 367,
+        "prompt_tokens_details": null
+      },
+      "elapsed_seconds": 8.412,
+      "original_grade": {
+        "passed": false,
+        "artifacts": [
+          {
+            "kind": "delivery_plan",
+            "orders": [
+              {
+                "order": "O1",
+                "status": "shipped",
+                "carrier": "cold_east"
+              },
+              {
+                "order": "O2",
+                "status": "no_carrier",
+                "carrier": null
+              },
+              {
+                "order": "O3",
+                "status": "shipped",
+                "carrier": "ground_east"
+              },
+              {
+                "order": "O4",
+                "status": "shipped",
+                "carrier": "fast_east"
+              },
+              {
+                "order": "O5",
+                "status": "no_carrier",
+                "carrier": null
+              },
+              {
+                "order": "O6",
+                "status": "out_of_stock",
+                "carrier": null
+              }
+            ],
+            "remaining_units": 1,
+            "total_shipping_fee": 21,
+            "evidence_refs": [
+              "ORDERS-2-9bc8f02d",
+              "STOCK-2-9bc8f02d",
+              "CARRIERS-2-9bc8f02d"
+            ]
+          }
+        ],
+        "failures": [
+          "('delivery.orders[O4].status', 'shipped', 'out_of_stock')"
+        ],
+        "no_artifact": false,
+        "finish_reasons": [
+          "tool_calls"
+        ],
+        "usage": {
+          "prompt_tokens": 4363,
+          "total_tokens": 4730,
+          "completion_tokens": 367,
+          "prompt_tokens_details": null
+        }
+      }
+    },
+    {
+      "source_case": 4,
+      "mode": "flat_task",
+      "passed": false,
+      "artifacts": [
+        {
+          "kind": "delivery_plan",
+          "orders": [
+            {
+              "order": "O1",
+              "status": "shipped",
+              "carrier": "cold_east"
+            },
+            {
+              "order": "O2",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O3",
+              "status": "shipped",
+              "carrier": "ground_east"
+            },
+            {
+              "order": "O4",
+              "status": "out_of_stock",
+              "carrier": "fast_east"
+            },
+            {
+              "order": "O5",
+              "status": "no_carrier",
+              "carrier": null
+            },
+            {
+              "order": "O6",
+              "status": "out_of_stock",
+              "carrier": "ground_west"
+            }
+          ],
+          "remaining_units": 1,
+          "total_shipping_fee": 12,
+          "evidence_refs": [
+            "ORDERS-2-9bc8f02d",
+            "STOCK-2-9bc8f02d",
+            "CARRIERS-2-9bc8f02d"
+          ]
+        }
+      ],
+      "failures": [
+        "('delivery.orders[O4].carrier', 'fast_east', None)"
+      ],
+      "no_artifact": false,
+      "finish_reasons": [
+        "stop"
+      ],
+      "usage": {
+        "prompt_tokens": 672,
+        "total_tokens": 985,
+        "completion_tokens": 313,
+        "prompt_tokens_details": null
+      },
+      "elapsed_seconds": 6.24,
+      "original_grade": {
+        "passed": false,
+        "artifacts": [
+          {
+            "kind": "delivery_plan",
+            "orders": [
+              {
+                "order": "O1",
+                "status": "shipped",
+                "carrier": "cold_east"
+              },
+              {
+                "order": "O2",
+                "status": "no_carrier",
+                "carrier": null
+              },
+              {
+                "order": "O3",
+                "status": "shipped",
+                "carrier": "ground_east"
+              },
+              {
+                "order": "O4",
+                "status": "shipped",
+                "carrier": "fast_east"
+              },
+              {
+                "order": "O5",
+                "status": "no_carrier",
+                "carrier": null
+              },
+              {
+                "order": "O6",
+                "status": "out_of_stock",
+                "carrier": null
+              }
+            ],
+            "remaining_units": 1,
+            "total_shipping_fee": 21,
+            "evidence_refs": [
+              "ORDERS-2-9bc8f02d",
+              "STOCK-2-9bc8f02d",
+              "CARRIERS-2-9bc8f02d"
+            ]
+          }
+        ],
+        "failures": [
+          "('delivery.orders[O4].status', 'shipped', 'out_of_stock')"
+        ],
+        "no_artifact": false,
+        "finish_reasons": [
+          "tool_calls"
+        ],
+        "usage": {
+          "prompt_tokens": 4363,
+          "total_tokens": 4730,
+          "completion_tokens": 367,
+          "prompt_tokens_details": null
+        }
+      }
+    }
+  ],
+  "independent_oracle": [
+    {
+      "source_case": 1,
+      "oracle_matches_independent_computation": true,
+      "stock_steps": [
+        {
+          "order": "O1",
+          "stock_before": 8,
+          "stock_after": 4,
+          "status": "shipped"
+        },
+        {
+          "order": "O2",
+          "stock_before": 4,
+          "stock_after": 4,
+          "status": "no_carrier"
+        },
+        {
+          "order": "O3",
+          "stock_before": 4,
+          "stock_after": 1,
+          "status": "shipped"
+        },
+        {
+          "order": "O4",
+          "stock_before": 1,
+          "stock_after": 1,
+          "status": "out_of_stock"
+        },
+        {
+          "order": "O5",
+          "stock_before": 1,
+          "stock_after": 1,
+          "status": "no_carrier"
+        },
+        {
+          "order": "O6",
+          "stock_before": 1,
+          "stock_after": 0,
+          "status": "shipped"
+        }
+      ],
+      "final_stock": 0,
+      "fee": 17
+    },
+    {
+      "source_case": 4,
+      "oracle_matches_independent_computation": true,
+      "stock_steps": [
+        {
+          "order": "O1",
+          "stock_before": 8,
+          "stock_after": 4,
+          "status": "shipped"
+        },
+        {
+          "order": "O2",
+          "stock_before": 4,
+          "stock_after": 4,
+          "status": "no_carrier"
+        },
+        {
+          "order": "O3",
+          "stock_before": 4,
+          "stock_after": 1,
+          "status": "shipped"
+        },
+        {
+          "order": "O4",
+          "stock_before": 1,
+          "stock_after": 1,
+          "status": "out_of_stock"
+        },
+        {
+          "order": "O5",
+          "stock_before": 1,
+          "stock_after": 1,
+          "status": "no_carrier"
+        },
+        {
+          "order": "O6",
+          "stock_before": 1,
+          "stock_after": 0,
+          "status": "shipped"
+        }
+      ],
+      "final_stock": 0,
+      "fee": 17
+    }
+  ],
+  "frozen_files_unchanged": 99,
+  "release_request_audit": {
+    "distinct_assignment_opportunities": 11,
+    "model_issued_requests": [
+      {
+        "message_id": "c6261d429d6549249559750f558007fc",
+        "recipients": [
+          "components",
+          "compatibility",
+          "decisions"
+        ],
+        "content": "Please report all evidence regarding components, compatibility, and decisions for the requested releases.",
+        "matching_opportunities": 3
+      },
+      {
+        "message_id": "906f698c49c14eec9951aaeef09043d2",
+        "recipients": [
+          "compatibility",
+          "decisions"
+        ],
+        "content": "Please report all evidence regarding compatibility and decisions for the requested releases.",
+        "matching_opportunities": 2
+      }
+    ]
+  }
+}
